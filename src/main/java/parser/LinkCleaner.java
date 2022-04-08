@@ -5,9 +5,10 @@ import org.jsoup.select.Elements;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-// TODO: проверить работу пагинации
 public class LinkCleaner {
     private final String domain;
     private Stream<String> stream;
@@ -16,13 +17,13 @@ public class LinkCleaner {
         this.domain = domain;
     }
 
-    List<String> clearLinks(@NotNull Elements links) {
+    Set<String> clearLinks(@NotNull Elements links) {
         stream = links.stream().map(url -> url.absUrl("href"));
         removeGetParamsAndAnchors();
         removeToMyselfLink();
         removeNotChildLinks();
         removeFilesLinks();
-        return stream.toList();
+        return stream.collect(Collectors.toSet());
     }
 
     private void removeGetParamsAndAnchors() {

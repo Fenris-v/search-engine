@@ -18,18 +18,16 @@ import java.util.Map;
 import java.util.Set;
 
 public class Parser {
-    private final DbConnection dbConnection = new DbConnection();
-    private final String domain = "http://www.playback.ru";
-    private final Map<String, Page> pageMap = new HashMap<>();
+    private String domain = "http://www.playback.ru";
+    private int batchSize = 0;
 
-    private int counter = 0;
-    private final int counter2 = 0;
+    private final DbConnection DB_CONNECTION = new DbConnection();
+    private final Map<String, Page> PAGE_MAP = new HashMap<>();
+    private final LinkCleaner LINK_CLEANER = new LinkCleaner(domain);
 
     public void parseSite() {
         try {
             execute();
-        } catch (SocketTimeoutException e) {
-            System.out.println(e.getMessage());
         } catch (IOException | ServerNotRespondingException | SQLException | InterruptedException e) {
             e.printStackTrace();
         }
@@ -39,12 +37,20 @@ public class Parser {
         Response response = getResponse(domain.concat("/"));
         addPageToMap("/", response, domain.concat("/"));
 
-        Set<String> urls = getLinks(response);
+        Set<String> urls = getLinks(response, domain.concat("/"));
         for (String url : urls) {
-            addPageRecursive(url);
+            tryAddPage(url);
         }
 
         savePages();
+    }
+
+    private void tryAddPage(String link) throws IOException, ServerNotRespondingException, InterruptedException {
+        try {
+            addPageRecursive(link);
+        } catch (SocketTimeoutException e) {
+            System.out.println(e.getMessage());
+        }
     }
 
     private @NotNull Response getResponse(String path) throws IOException, ServerNotRespondingException {
@@ -63,17 +69,16 @@ public class Parser {
 
     private void addPageToMap(String path, @NotNull Response response, String url) {
         Page page = new Page(path, response.statusCode(), response.body());
-        pageMap.put(url, page);
+        PAGE_MAP.put(url, page);
     }
 
-    private Set<String> getLinks(@NotNull Response response) throws IOException {
+    private Set<String> getLinks(@NotNull Response response, String parentLink) throws IOException {
         Elements links = response.parse().select("a");
-        LinkCleaner linkCleaner = new LinkCleaner(domain);
-        return linkCleaner.clearLinks(links);
+        return LINK_CLEANER.clearLinks(links, parentLink);
     }
 
     private void addPageRecursive(String url) throws IOException, ServerNotRespondingException, InterruptedException {
-        if (pageMap.containsKey(url)) {
+        if (PAGE_MAP.containsKey(url)) {
             return;
         }
 
@@ -83,16 +88,16 @@ public class Parser {
         String path = url.replaceAll(domain, "");
         addPageToMap(path, response, url);
 
-        Set<String> urls = getLinks(response);
+        Set<String> urls = getLinks(response, url);
         for (String link : urls) {
-            addPageRecursive(link);
+            tryAddPage(link);
         }
     }
 
     private void savePages() {
         String sql = "INSERT INTO pages (code, content, path) VALUES (?, ?, ?)";
 
-        try (Connection connection = this.dbConnection.getConnection()) {
+        try (Connection connection = this.DB_CONNECTION.getConnection()) {
             assert connection != null;
             dropTableIfExists(connection);
             createTable(connection);
@@ -108,17 +113,17 @@ public class Parser {
     }
 
     private void addBatch(PreparedStatement statement) throws SQLException {
-        for (Page page : pageMap.values()) {
+        for (Page page : PAGE_MAP.values()) {
             statement.setInt(1, page.getCode());
             statement.setString(2, page.getContent());
             statement.setString(3, page.getPath());
 
             statement.addBatch();
-            counter++;
+            batchSize++;
 
-            if (counter >= 1_000) {
+            if (batchSize >= 1_000) {
                 statement.executeBatch();
-                counter = 0;
+                batchSize = 0;
             }
         }
     }

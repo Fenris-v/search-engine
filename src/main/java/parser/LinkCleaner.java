@@ -1,40 +1,56 @@
 package parser;
 
 import org.jetbrains.annotations.NotNull;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class LinkCleaner {
-    private final String domain;
-    private Stream<String> stream;
+    private final String DOMAIN;
+    private Set<String> urlSet;
 
     public LinkCleaner(String domain) {
-        this.domain = domain;
+        DOMAIN = domain;
     }
 
-    Set<String> clearLinks(@NotNull Elements links) {
-        stream = links.stream().map(url -> url.absUrl("href"));
-        removeGetParamsAndAnchors();
-        removeToMyselfLink();
-        removeNotChildLinks();
-        removeFilesLinks();
-        return stream.collect(Collectors.toSet());
+    Set<String> clearLinks(@NotNull Elements links, String parentUrl) {
+        urlSet = new HashSet<>();
+
+        for (Element url : links) {
+            addLinkToSet(url, parentUrl);
+        }
+
+        return urlSet;
     }
 
-    private void removeGetParamsAndAnchors() {
+    private void addLinkToSet(@NotNull Element url, String parentUrl) {
+        String link = url.absUrl("href");
+        if (isNotChildLinks(link)) {
+            return;
+        }
+
+        link = removeGetParamsAndAnchors(link);
+        if (isMyselfLink(link, parentUrl) || isFileLink(link)) {
+            return;
+        }
+
+        urlSet.add(link);
+    }
+
+    private String removeGetParamsAndAnchors(String link) {
         List<Character> chars = Arrays.asList('?', '#');
         for (char c : chars) {
-            stream = stream.map(url -> substringByChar(c, url));
+            link = substringByChar(c, link);
         }
+
+        return link;
     }
 
-    private @NotNull
-    String substringByChar(char c, @NotNull String url) {
+    private static @NotNull String substringByChar(char c, @NotNull String url) {
         int index = url.indexOf(c);
         if (index > 0) {
             return url.substring(0, index);
@@ -43,21 +59,15 @@ public class LinkCleaner {
         return url;
     }
 
-    private void removeToMyselfLink() {
-        stream = stream.filter(url -> !url.equals(domain));
+    private boolean isMyselfLink(@NotNull String link, String parentUrl) {
+        return link.equals(parentUrl);
     }
 
-    private void removeNotChildLinks() {
-        stream = stream.filter(url -> url.contains(domain));
+    private boolean isNotChildLinks(@NotNull String link) {
+        return !link.contains(DOMAIN);
     }
 
-    private void removeFilesLinks() {
-        stream = stream.filter(url -> {
-            if (url.matches("^.*\\.(html|php)$")) {
-                return true;
-            }
-
-            return !url.matches(".*\\.[0-9a-z]{1,5}$");
-        });
+    private boolean isFileLink(@NotNull String link) {
+        return !link.matches("^.*\\.(html|php)$") && link.matches(".*\\.[\\da-z]{1,5}$");
     }
 }

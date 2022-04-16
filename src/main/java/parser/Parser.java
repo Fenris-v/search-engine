@@ -21,9 +21,9 @@ public class Parser {
     private String domain = "http://www.playback.ru";
     private int batchSize = 0;
 
-    private final DbConnection DB_CONNECTION = new DbConnection();
-    private final Map<String, Page> PAGE_MAP = new HashMap<>();
-    private final LinkCleaner LINK_CLEANER = new LinkCleaner(domain);
+    private final DbConnection dbConnection = new DbConnection();
+    private final Map<String, Page> pageMap = new HashMap<>();
+    private final LinkCleaner linkCleaner = new LinkCleaner(domain);
 
     public void parseSite() {
         try {
@@ -69,16 +69,16 @@ public class Parser {
 
     private void addPageToMap(String path, @NotNull Response response, String url) {
         Page page = new Page(path, response.statusCode(), response.body());
-        PAGE_MAP.put(url, page);
+        pageMap.put(url, page);
     }
 
     private Set<String> getLinks(@NotNull Response response, String parentLink) throws IOException {
         Elements links = response.parse().select("a");
-        return LINK_CLEANER.clearLinks(links, parentLink);
+        return linkCleaner.clearLinks(links, parentLink);
     }
 
     private void addPageRecursive(String url) throws IOException, ServerNotRespondingException, InterruptedException {
-        if (PAGE_MAP.containsKey(url)) {
+        if (pageMap.containsKey(url)) {
             return;
         }
 
@@ -97,7 +97,7 @@ public class Parser {
     private void savePages() {
         String sql = "INSERT INTO pages (code, content, path) VALUES (?, ?, ?)";
 
-        try (Connection connection = this.DB_CONNECTION.getConnection()) {
+        try (Connection connection = this.dbConnection.getConnection()) {
             assert connection != null;
             dropTableIfExists(connection);
             createTable(connection);
@@ -113,7 +113,7 @@ public class Parser {
     }
 
     private void addBatch(PreparedStatement statement) throws SQLException {
-        for (Page page : PAGE_MAP.values()) {
+        for (Page page : pageMap.values()) {
             statement.setInt(1, page.getCode());
             statement.setString(2, page.getContent());
             statement.setString(3, page.getPath());

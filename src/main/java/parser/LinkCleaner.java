@@ -10,11 +10,11 @@ import java.util.List;
 import java.util.Set;
 
 public class LinkCleaner {
-    private final String DOMAIN;
+    private final String domain;
     private Set<String> urlSet;
 
     public LinkCleaner(String domain) {
-        DOMAIN = domain;
+        this.domain = domain;
     }
 
     Set<String> clearLinks(@NotNull Elements links, String parentUrl) {
@@ -64,7 +64,7 @@ public class LinkCleaner {
     }
 
     private boolean isNotChildLinks(@NotNull String link) {
-        return !link.contains(DOMAIN);
+        return !link.contains(domain);
     }
 
     private boolean isFileLink(@NotNull String link) {

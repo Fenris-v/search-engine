@@ -10,24 +10,19 @@ import java.util.List;
 import java.util.Set;
 
 public class LinkCleaner {
-    private final String domain;
-    private Set<String> urlSet;
+    private static String domain;
 
-    public LinkCleaner(String domain) {
-        this.domain = domain;
-    }
-
-    Set<String> clearLinks(@NotNull Elements links, String parentUrl) {
-        urlSet = new HashSet<>();
+    static Set<String> clearLinks(@NotNull Elements links, String parentUrl, String domain, HashSet<String> urlSet) {
+        LinkCleaner.domain = domain;
 
         for (Element url : links) {
-            addLinkToSet(url, parentUrl);
+            addLinkToSet(url, parentUrl, urlSet);
         }
 
         return urlSet;
     }
 
-    private void addLinkToSet(@NotNull Element url, String parentUrl) {
+    private static void addLinkToSet(@NotNull Element url, String parentUrl, HashSet<String> urlSet) {
         String link = url.absUrl("href");
         if (isNotChildLinks(link)) {
             return;
@@ -41,7 +36,7 @@ public class LinkCleaner {
         urlSet.add(link);
     }
 
-    private String removeGetParamsAndAnchors(String link) {
+    private static String removeGetParamsAndAnchors(String link) {
         List<Character> chars = Arrays.asList('?', '#');
         for (char c : chars) {
             link = substringByChar(c, link);
@@ -59,15 +54,15 @@ public class LinkCleaner {
         return url;
     }
 
-    private boolean isMyselfLink(@NotNull String link, String parentUrl) {
+    private static boolean isMyselfLink(@NotNull String link, String parentUrl) {
         return link.equals(parentUrl);
     }
 
-    private boolean isNotChildLinks(@NotNull String link) {
+    private static boolean isNotChildLinks(@NotNull String link) {
         return !link.contains(domain);
     }
 
-    private boolean isFileLink(@NotNull String link) {
+    private static boolean isFileLink(@NotNull String link) {
         return !link.matches("^.*\\.(html|php)$") && link.matches(".*\\.[\\da-z]{1,5}$");
     }
 }

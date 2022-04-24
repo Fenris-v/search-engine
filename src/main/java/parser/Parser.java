@@ -2,6 +2,8 @@ package parser;
 
 import db.DbConnection;
 import entities.Page;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
@@ -15,10 +17,17 @@ public class Parser {
     private String domain = "http://www.playback.ru";
     private int batchSize = 0;
 
-    private final DbConnection dbConnection = new DbConnection();
     public volatile static Map<String, Page> pageMap = new ConcurrentHashMap<>();
+    static final Logger logger = LogManager.getRootLogger();
+    private final DbConnection dbConnection = new DbConnection();
 
     public void parseSite() {
+        try {
+            throw new SQLException();
+        } catch (SQLException e) {
+            logger.error(e);
+        }
+
         new ForkJoinPool().invoke(new RecursiveParser(domain, domain.concat("/")));
         savePages();
     }
@@ -37,7 +46,7 @@ public class Parser {
             statement.executeBatch();
             statement.close();
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.error(e);
         }
     }
 

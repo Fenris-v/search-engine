@@ -41,7 +41,7 @@ public class RecursiveParser extends RecursiveTask<Map<String, Page>> {
                 }
             }
         } catch (IOException | ServerNotRespondingException | InterruptedException e) {
-            System.out.println(e.getMessage());
+            Parser.logger.warn(e);
         }
 
         return null;
@@ -53,7 +53,7 @@ public class RecursiveParser extends RecursiveTask<Map<String, Page>> {
 
             tasks.forEach(ForkJoinTask::join);
         } catch (SocketTimeoutException e) {
-            System.out.println(e.getMessage());
+            Parser.logger.warn(e);
         }
     }
 

@@ -1,17 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="ERROR">
     <Appenders>
-        <File name="Jsoup" fileName="logs/jsoup.log">
+        <File name="Warn" fileName="logs/warns.log">
             <PatternLayout pattern="%d{yyyy-mm-dd HH:mm:ss.SSS} [%t] %-5level- %msg%n"/>
             <Filters>
                 <ThresholdFilter level="ERROR" onMatch="DENY" onMismatch="ACCEPT"/>
-            </Filters>
-        </File>
-
-        <File name="Query" fileName="logs/query.log">
-            <PatternLayout pattern="%d{yyyy-mm-dd HH:mm:ss.SSS} [%t] %-5level- %msg%n"/>
-            <Filters>
-                <ThresholdFilter level="WARN" onMatch="DENY" onMismatch="ACCEPT"/>
             </Filters>
         </File>
 
@@ -22,8 +15,7 @@
 
     <Loggers>
         <Root level="INFO">
-            <AppenderRef ref="Jsoup" level="INFO"/>
-            <AppenderRef ref="Query" level="WARN"/>
+            <AppenderRef ref="Warn" level="INFO"/>
             <AppenderRef ref="File" level="ERROR"/>
         </Root>
     </Loggers>

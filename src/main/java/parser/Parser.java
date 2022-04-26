@@ -2,9 +2,9 @@ package parser;
 
 import db.DbConnection;
 import entities.Page;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -18,14 +18,14 @@ public class Parser {
     private int batchSize = 0;
 
     public volatile static Map<String, Page> pageMap = new ConcurrentHashMap<>();
-    static final Logger logger = LogManager.getRootLogger();
+    static final Logger logger = LoggerFactory.getLogger(Parser.class);
     private final DbConnection dbConnection = new DbConnection();
 
     public void parseSite() {
         try {
             throw new SQLException();
         } catch (SQLException e) {
-            logger.error(e);
+            logger.error(e.getMessage());
         }
 
         new ForkJoinPool().invoke(new RecursiveParser(domain, domain.concat("/")));
@@ -46,7 +46,7 @@ public class Parser {
             statement.executeBatch();
             statement.close();
         } catch (SQLException e) {
-            logger.error(e);
+            logger.error(e.getMessage());
         }
     }
 

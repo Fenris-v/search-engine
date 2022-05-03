@@ -35,7 +35,7 @@ public class Parser {
     private void savePages() {
         String sql = "INSERT INTO pages (code, content, path) VALUES (?, ?, ?)";
 
-        try (Connection connection = this.dbConnection.getConnection()) {
+        try (Connection connection = dbConnection.getConnection()) {
             assert connection != null;
             dropTableIfExists(connection);
             createTable(connection);

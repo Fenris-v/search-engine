@@ -28,10 +28,14 @@ public class Morphology {
 
         words = new HashMap<>();
         while (matcher.find()) {
-            String word = matcher.group().toLowerCase();
-            word = luceneMorphology.getMorphInfo(word).get(0);
+            try {
+                String word = matcher.group().toLowerCase();
+                word = luceneMorphology.getMorphInfo(word).get(0);
 
-            countWord(word);
+                countWord(word);
+            } catch (Exception exception) {
+//                System.out.println(exception.getMessage());
+            }
         }
 
         return words;

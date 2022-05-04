@@ -64,7 +64,7 @@ public class Indexing {
     }
 
     private void setPages(@NotNull Statement statement) throws SQLException {
-        ResultSet result = statement.executeQuery("SELECT * FROM pages WHERE path = '/' LIMIT 1");
+        ResultSet result = statement.executeQuery("SELECT * FROM pages");
         while (result.next()) {
             pages.add(new Page(
                             result.getInt("id"),

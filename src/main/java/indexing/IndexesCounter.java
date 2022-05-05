@@ -24,6 +24,8 @@ public class IndexesCounter {
     private final HashMap<String, Integer> lemmas = new HashMap<>();
     private PreparedStatement preparedStatement;
 
+    private static final String addIndexSql = "INSERT INTO indexes (page_id, lemma_id, rank) VALUES (?, ?, ?)";
+
     public IndexesCounter(Indexing indexing) {
         this.indexing = indexing;
         setLemmas();
@@ -77,8 +79,7 @@ public class IndexesCounter {
     }
 
     private void executeSavingIndexes(Page page) throws SQLException {
-        String sql = "INSERT INTO indexes (page_id, lemma_id, rank) VALUES (?, ?, ?)";
-        preparedStatement = indexing.getConnection().prepareStatement(sql);
+        preparedStatement = indexing.getConnection().prepareStatement(addIndexSql);
         wordsWeight.forEach((word, weight) -> addIndexToBatch(page, word, weight));
         preparedStatement.executeBatch();
         preparedStatement.close();

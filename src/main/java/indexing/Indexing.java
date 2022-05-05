@@ -17,6 +17,9 @@ public class Indexing {
     private final Set<Field> fields = new HashSet<>();
     private final Set<Page> pages = new HashSet<>();
 
+    private static final String getAllPagesSql = "SELECT * FROM pages";
+    private static final String getAllFieldsSql = "SELECT * FROM fields";
+
     public Indexing() {
         connection = new DbConnection().getConnection();
 
@@ -53,7 +56,7 @@ public class Indexing {
     }
 
     private void setFields(@NotNull Statement statement) throws SQLException {
-        ResultSet result = statement.executeQuery("SELECT * FROM fields");
+        ResultSet result = statement.executeQuery(getAllFieldsSql);
         while (result.next()) {
             fields.add(new Field(
                     result.getString("name"),
@@ -64,7 +67,7 @@ public class Indexing {
     }
 
     private void setPages(@NotNull Statement statement) throws SQLException {
-        ResultSet result = statement.executeQuery("SELECT * FROM pages");
+        ResultSet result = statement.executeQuery(getAllPagesSql);
         while (result.next()) {
             pages.add(new Page(
                             result.getInt("id"),

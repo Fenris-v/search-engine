@@ -20,6 +20,8 @@ class LemmasCounter {
     private Document document;
     private PreparedStatement preparedStatement;
 
+    private static final String addLemmaSql = "INSERT INTO lemmas (lemma, frequency) VALUES (?, ?) ON CONFLICT (lemma) DO UPDATE SET frequency = lemmas.frequency + 1";
+
     public LemmasCounter(Indexing indexing) {
         this.indexing = indexing;
     }
@@ -56,8 +58,7 @@ class LemmasCounter {
 
     private void executeSaveLemmas() {
         try {
-            String sql = "INSERT INTO lemmas (lemma, frequency) VALUES (?, ?) ON CONFLICT (lemma) DO UPDATE SET frequency = lemmas.frequency + 1";
-            preparedStatement = indexing.getConnection().prepareStatement(sql);
+            preparedStatement = indexing.getConnection().prepareStatement(addLemmaSql);
 
             words.forEach((word, count) -> addLemmasBatch(word));
 

@@ -1,3 +1,5 @@
+import db.Tables;
+import indexing.Indexing;
 import parser.Parser;
 
 public class Main {
@@ -5,5 +7,8 @@ public class Main {
 
     public static void main(String[] args) {
         parser.parseSite();
+
+        Tables.createTables();
+        new Indexing().execute();
     }
 }

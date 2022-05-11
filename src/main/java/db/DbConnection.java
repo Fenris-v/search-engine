@@ -1,5 +1,6 @@
 package db;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
@@ -19,5 +20,13 @@ public final class DbConnection {
         }
 
         return null;
+    }
+
+    public static void closeConnection(@NotNull Connection connection) {
+        try {
+            connection.close();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -1,6 +1,5 @@
 package indexing;
 
-import contracts.ExcludeElements;
 import entities.Field;
 import entities.Page;
 import morphology.Morphology;
@@ -8,13 +7,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import services.HTMLCleaner;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-class LemmasCounter implements ExcludeElements {
+class LemmasCounter {
     private final Indexing indexing;
     private final Morphology morphology = new Morphology();
     private final Map<String, Integer> words = new HashMap<>();
@@ -50,7 +50,7 @@ class LemmasCounter implements ExcludeElements {
             return;
         }
 
-        excludeJunkElements(element);
+        HTMLCleaner.excludeJunkElements(element);
         morphology.countWords(element.text()).forEach(this::wordSetMerge);
     }
 

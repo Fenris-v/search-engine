@@ -1,6 +1,5 @@
 package searching;
 
-import contracts.ExcludeElements;
 import entities.Index;
 import entities.Lemma;
 import entities.Page;
@@ -10,13 +9,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import services.HTMLCleaner;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
 
-class Results implements ExcludeElements {
+class Results {
     private final Statement statement;
     private final Set<Lemma> lemmas;
     private final String mostRareWord;
@@ -176,11 +176,20 @@ class Results implements ExcludeElements {
             return;
         }
 
-        results.add(new Result(pageLemmasRank, pageAbsRank, pages.get(pageId), getSnippet(element)));
+        Page page = pages.get(pageId);
+        Element elementTitle = document.selectFirst("title");
+        String pageTitle = elementTitle == null ? "NO TITLE" : elementTitle.text();
+        results.add(new Result(
+                pageLemmasRank,
+                pageAbsRank,
+                page.getPath(),
+                pageTitle,
+                getSnippet(element)
+        ));
     }
 
     private String getSnippet(Element element) {
-        excludeJunkElements(element);
+        HTMLCleaner.excludeJunkElements(element);
         return morphology.getSnippet(element.text(), mostRareWord);
     }
 

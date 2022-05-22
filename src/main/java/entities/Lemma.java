@@ -25,7 +25,7 @@ public class Lemma implements Comparable<Lemma> {
     }
 
     @Override
-    public int compareTo(@org.jetbrains.annotations.NotNull Lemma lemma) {
+    public int compareTo(@NotNull @org.jetbrains.annotations.NotNull Lemma lemma) {
         return Integer.compare(frequency, lemma.getFrequency());
     }
 }

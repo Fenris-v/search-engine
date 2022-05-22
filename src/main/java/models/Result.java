@@ -21,17 +21,19 @@ public class Result implements Comparable<Result> {
     private String title;
     private String snippet;
 
+    public final static int SNIPPET_LENGTH = 250;
+
     @Setter
     private float relevance;
 
-    public Result(Map<Integer, Float> lemmas, float absRank, @NotNull Page page) {
+    public Result(Map<Integer, Float> lemmas, float absRank, @NotNull Page page, String snippet) {
         this.lemmas = lemmas;
         this.absRank = absRank;
         uri = page.getPath();
         Document document = Jsoup.parse(page.getContent());
-        Element elementTitle = document.select("title").first();
-        title = elementTitle == null ? "" : elementTitle.text();
-        snippet = "";
+        Element elementTitle = document.selectFirst("title");
+        title = elementTitle == null ? "NO TITLE" : elementTitle.text();
+        this.snippet = snippet;
     }
 
     @Override

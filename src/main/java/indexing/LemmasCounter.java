@@ -1,5 +1,6 @@
 package indexing;
 
+import contracts.ExcludeElements;
 import entities.Field;
 import entities.Page;
 import morphology.Morphology;
@@ -13,7 +14,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-class LemmasCounter {
+class LemmasCounter implements ExcludeElements {
     private final Indexing indexing;
     private final Morphology morphology = new Morphology();
     private final Map<String, Integer> words = new HashMap<>();
@@ -43,9 +44,14 @@ class LemmasCounter {
     }
 
     private void countWords(@NotNull Field field) {
-        Element element = document.select(field.getSelector()).first();
-        String str = element == null ? "" : element.text();
-        morphology.countWords(str).forEach(this::wordSetMerge);
+        Element element = document.selectFirst(field.getSelector());
+
+        if (element == null) {
+            return;
+        }
+
+        excludeJunkElements(element);
+        morphology.countWords(element.text()).forEach(this::wordSetMerge);
     }
 
     private void wordSetMerge(String word, int count) {

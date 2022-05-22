@@ -1,31 +1,47 @@
 package searching;
 
+import contracts.ExcludeElements;
 import entities.Index;
 import entities.Lemma;
 import entities.Page;
 import models.Result;
+import morphology.Morphology;
 import org.jetbrains.annotations.NotNull;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
 
-class Results {
+class Results implements ExcludeElements {
     private final Statement statement;
+    private final Set<Lemma> lemmas;
+    private final String mostRareWord;
+    private final Morphology morphology;
 
     private float maxAbsRank = 0;
     private float pageAbsRank = 0;
+
     private final Map<Integer, List<Index>> indexMap = new HashMap<>();
     private final Map<Integer, Page> pages = new HashMap<>();
     private final TreeSet<Result> results = new TreeSet<>();
     private final Map<Integer, Float> pageLemmasRank = new HashMap<>();
 
-    public Results(Statement statement) {
+    public Results(Statement statement, @NotNull Set<Lemma> lemmas) {
         this.statement = statement;
+        this.lemmas = lemmas;
+        mostRareWord = lemmas.isEmpty() ? "" : lemmas.iterator().next().getLemma();
+        morphology = new Morphology();
     }
 
-    @NotNull TreeSet<Result> getResults(@NotNull Set<Lemma> lemmas) throws SQLException {
+    @NotNull TreeSet<Result> getResults() throws SQLException {
+        if (lemmas.isEmpty()) {
+            return new TreeSet<>();
+        }
+
         List<Integer> indexes = getIndexes(lemmas);
 
         String sql = getResultsSql(lemmas, indexes);
@@ -154,7 +170,18 @@ class Results {
         pageLemmasRank.clear();
         countRanks(indexes);
 
-        results.add(new Result(pageLemmasRank, pageAbsRank, pages.get(pageId)));
+        Document document = Jsoup.parse(pages.get(pageId).getContent());
+        Element element = document.selectFirst("body");
+        if (element == null) {
+            return;
+        }
+
+        results.add(new Result(pageLemmasRank, pageAbsRank, pages.get(pageId), getSnippet(element)));
+    }
+
+    private String getSnippet(Element element) {
+        excludeJunkElements(element);
+        return morphology.getSnippet(element.text(), mostRareWord);
     }
 
     private void countRanks(@NotNull List<Index> indexes) {

@@ -21,7 +21,11 @@ public class Search {
     public Set<Result> execute() {
         try (Statement statement = connection.createStatement()) {
             Set<Lemma> lemmas = new Lemmas(searchRequest, statement).getLemmas();
-            return new Results(statement).getResults(lemmas);
+            if (lemmas.isEmpty()) {
+                return null;
+            }
+
+            return new Results(statement, lemmas).getResults();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         } finally {

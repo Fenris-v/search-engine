@@ -1,6 +1,7 @@
 package entities;
 
 import com.sun.istack.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -8,21 +9,22 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 public class Index {
     private int id;
 
     @NotNull
-    private int page_id;
+    private int pageId;
 
     @NotNull
-    private int lemma_id;
+    private int lemmaId;
 
     @NotNull
     private float rank;
 
-    public Index(int page_id, int lemma_id, float rank) {
-        this.page_id = page_id;
-        this.lemma_id = lemma_id;
+    public Index(int pageId, int lemmaId, float rank) {
+        this.pageId = pageId;
+        this.lemmaId = lemmaId;
         this.rank = rank;
     }
 }

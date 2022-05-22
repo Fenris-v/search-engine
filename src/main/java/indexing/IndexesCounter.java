@@ -64,7 +64,7 @@ public class IndexesCounter {
     }
 
     private void calculateWordsWeight(@NotNull Field field) {
-        Element element = document.select(field.getSelector()).first();
+        Element element = document.selectFirst(field.getSelector());
         String str = element == null ? "" : element.text();
         morphology.countWords(str).forEach((word, count) -> calculateWordWeight(field, word, count));
     }

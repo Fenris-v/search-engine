@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import services.HTMLCleaner;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -43,9 +44,14 @@ class LemmasCounter {
     }
 
     private void countWords(@NotNull Field field) {
-        Element element = document.select(field.getSelector()).first();
-        String str = element == null ? "" : element.text();
-        morphology.countWords(str).forEach(this::wordSetMerge);
+        Element element = document.selectFirst(field.getSelector());
+
+        if (element == null) {
+            return;
+        }
+
+        HTMLCleaner.excludeJunkElements(element);
+        morphology.countWords(element.text()).forEach(this::wordSetMerge);
     }
 
     private void wordSetMerge(String word, int count) {

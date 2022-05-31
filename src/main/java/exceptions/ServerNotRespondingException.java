@@ -1,4 +1,4 @@
-package exceptions.parser;
+package exceptions;
 
 public class ServerNotRespondingException extends Exception {
 }

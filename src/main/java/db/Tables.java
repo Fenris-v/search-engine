@@ -17,8 +17,11 @@ public class Tables {
             try (Statement statement = connection.createStatement()) {
                 statement.execute("DROP TABLE IF EXISTS indexes");
                 statement.execute("DROP TABLE IF EXISTS lemmas");
-                connection.createStatement().execute("DROP TABLE IF EXISTS fields");
+                statement.execute("DROP TABLE IF EXISTS fields");
+                statement.execute("DROP TABLE IF EXISTS pages");
 
+                createSiteTable(statement);
+                createPagesTable(statement);
                 createFieldsTable(statement, connection);
                 createLemmaTable(statement);
                 createIndexTable(statement);
@@ -28,8 +31,23 @@ public class Tables {
         }
     }
 
-    private static void createFieldsTable(@NotNull Statement statement, Connection connection) throws SQLException {
+    private static void createPagesTable(@NotNull Statement statement) throws SQLException {
+        statement.execute("CREATE TABLE IF NOT EXISTS pages("
+                .concat("id SERIAL PRIMARY KEY, ")
+                .concat("code INT NOT NULL, ")
+                .concat("content TEXT NOT NULL, ")
+                .concat("path VARCHAR(255) NOT NULL, ")
+                .concat("created_at TIMESTAMP NOT NULL DEFAULT NOW(), ")
+                .concat("updated_at TIMESTAMP NOT NULL DEFAULT NOW(), ")
+                .concat("site_id int NOT NULL, ")
+                .concat("CONSTRAINT fk_site FOREIGN KEY(site_id) REFERENCES sites(id))")
+        );
 
+        statement.execute("CREATE UNIQUE INDEX pages_path_uindex ON pages (path)");
+    }
+
+    private static void createFieldsTable(@NotNull Statement statement, @NotNull Connection connection)
+            throws SQLException {
         statement.execute("CREATE TABLE IF NOT EXISTS fields("
                 .concat("id SERIAL PRIMARY KEY, ")
                 .concat("name VARCHAR(255) NOT NULL UNIQUE, ")
@@ -60,7 +78,9 @@ public class Tables {
                 .concat("lemma VARCHAR(255) NOT NULL, ")
                 .concat("frequency int NOT NULL, ")
                 .concat("created_at TIMESTAMP NOT NULL DEFAULT NOW(), ")
-                .concat("updated_at TIMESTAMP NOT NULL DEFAULT NOW())")
+                .concat("updated_at TIMESTAMP NOT NULL DEFAULT NOW(), ")
+                .concat("site_id int NOT NULL, ")
+                .concat("CONSTRAINT fk_site FOREIGN KEY(site_id) REFERENCES sites(id))")
         );
 
         statement.execute("CREATE UNIQUE INDEX lemmas_lemma_uindex ON lemmas (lemma)");
@@ -77,5 +97,21 @@ public class Tables {
                 .concat("CONSTRAINT indexes_pages_id_fk FOREIGN KEY (page_id) REFERENCES pages, ")
                 .concat("CONSTRAINT indexes_lemmas_id_fk FOREIGN KEY (lemma_id) REFERENCES lemmas)")
         );
+    }
+
+    private static void createSiteTable(@NotNull Statement statement) throws SQLException {
+        createPgStatusEnum(statement);
+
+        statement.execute("CREATE TABLE IF NOT EXISTS sites("
+                .concat("id SERIAL PRIMARY KEY, ")
+                .concat("status index_status_enum NOT NULL, ")
+                .concat("status_time TIMESTAMP NOT NULL DEFAULT NOW(), ")
+                .concat("last_error TEXT, ")
+                .concat("url VARCHAR(255) NOT NULL, ")
+                .concat("name VARCHAR(255) NOT NULL)"));
+    }
+
+    private static void createPgStatusEnum(@NotNull Statement statement) throws SQLException {
+        statement.execute("CREATE TYPE index_status_enum AS ENUM ('INDEXING', 'INDEXED', 'FAILED')");
     }
 }

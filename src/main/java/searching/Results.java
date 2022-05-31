@@ -133,11 +133,13 @@ class Results {
     }
 
     private @NotNull Page makePage(@NotNull ResultSet resultSet, int pageId) throws SQLException {
+        // todo
         return new Page(
                 pageId,
                 resultSet.getString("path"),
                 resultSet.getInt("code"),
-                resultSet.getString("content")
+                resultSet.getString("content"),
+                1
         );
     }
 

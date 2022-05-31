@@ -1,11 +1,11 @@
 package morphology;
 
-import models.Result;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.WrongCharaterException;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import searching.Search;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -108,8 +108,8 @@ public class Morphology {
     }
 
     private @NotNull String cutSnippet(@NotNull String snippet) {
-        if (snippet.length() > Result.SNIPPET_LENGTH) {
-            snippet = snippet.substring(0, Result.SNIPPET_LENGTH - 3).concat("...");
+        if (snippet.length() > Search.SNIPPET_LENGTH) {
+            snippet = snippet.substring(0, Search.SNIPPET_LENGTH - 3).concat("...");
         }
 
         return snippet;

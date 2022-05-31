@@ -1,0 +1,31 @@
+db:
+  user: engine
+  password: password
+  url: jdbc:postgresql://localhost:5432/search_engine
+
+sites:
+  #  - url: http://www.playback.ru
+  #    name: PlayBack
+  - url: http://radiomv.ru
+    name: Милицейская волна
+  #  - url: https://ipfran.ru
+  #    name: ИПФ РАН
+  #  - url: https://dimonvideo.ru
+  #    name: Димон видео
+  #  - url: https://nikoartgallery.com
+  #    name: Niko
+  #  - url: https://et-cetera.ru
+  #    name: Et Cetera
+#  - url: https://www.lutherancathedral.ru
+#    name: Собор Петра и Павла
+#  - url: https://dombulgakova.ru
+#    name: Булгаковский дом
+#  - url: https://www.svetlovka.ru
+#    name: Светловка
+
+parser:
+  user_agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.82 Safari/537.36
+  referrer: https://www.google.com
+
+web:
+  path: /admin

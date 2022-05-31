@@ -1,6 +1,5 @@
 package entities;
 
-import com.sun.istack.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,18 +12,18 @@ import lombok.Setter;
 public class Page {
     private int id;
 
-    @NotNull
     private String path;
 
-    @NotNull
     private int code;
 
-    @NotNull
     private String content;
 
-    public Page(String path, int code, String content) {
+    private int siteId;
+
+    public Page(String path, int code, String content, int siteId) {
         this.path = path;
         this.code = code;
         this.content = content;
+        this.siteId = siteId;
     }
 }

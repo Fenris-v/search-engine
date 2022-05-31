@@ -59,10 +59,12 @@ class Lemmas {
     }
 
     private @NotNull Lemma makeLemma(@NotNull ResultSet result) throws SQLException {
+        // todo
         return new Lemma(
                 result.getInt("id"),
                 result.getString("lemma"),
-                result.getInt("frequency")
+                result.getInt("frequency"),
+                result.getInt("site_id")
         );
     }
 }

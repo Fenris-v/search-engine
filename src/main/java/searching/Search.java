@@ -10,6 +10,8 @@ import java.sql.Statement;
 import java.util.Set;
 
 public class Search {
+    public final static int SNIPPET_LENGTH = 250;
+
     private final String searchRequest;
     private final Connection connection;
 

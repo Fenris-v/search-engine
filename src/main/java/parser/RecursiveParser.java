@@ -1,7 +1,7 @@
 package parser;
 
 import entities.Page;
-import exceptions.parser.ServerNotRespondingException;
+import exceptions.ServerNotRespondingException;
 import org.jetbrains.annotations.NotNull;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
@@ -16,12 +16,17 @@ import java.util.concurrent.RecursiveTask;
 public class RecursiveParser extends RecursiveTask<Map<String, Page>> {
     private final String parent;
     private final String domain;
+    private final String referrer;
+    private final String userAgent;
 
     private final List<RecursiveParser> tasks = new ArrayList<>();
 
-    public RecursiveParser(String domain, String parent) {
+    public RecursiveParser(String domain, String parent, String referrer, String userAgent) {
+        System.out.println(domain);
         this.domain = domain;
         this.parent = parent;
+        this.referrer = referrer;
+        this.userAgent = userAgent;
     }
 
     @Override
@@ -59,8 +64,8 @@ public class RecursiveParser extends RecursiveTask<Map<String, Page>> {
 
     private @NotNull Connection.Response getResponse(String path) throws IOException, ServerNotRespondingException {
         Connection.Response response = Jsoup.connect(path)
-                .userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.82 Safari/537.36")
-                .referrer("https://www.google.com")
+                .userAgent(userAgent)
+                .referrer(referrer)
                 .timeout(5_000)
                 .execute();
 
@@ -72,7 +77,8 @@ public class RecursiveParser extends RecursiveTask<Map<String, Page>> {
     }
 
     private void addPageToMap(String path, @NotNull Connection.Response response, String url) {
-        Page page = new Page(path, response.statusCode(), response.body());
+        // todo
+        Page page = new Page(path, response.statusCode(), response.body(), 1);
         Parser.pageMap.put(url, page);
     }
 
@@ -94,7 +100,7 @@ public class RecursiveParser extends RecursiveTask<Map<String, Page>> {
 
         Set<String> urls = getLinks(response, url);
         for (String link : urls) {
-            tasks.add((RecursiveParser) new RecursiveParser(domain, link).fork());
+            tasks.add((RecursiveParser) new RecursiveParser(domain, link, referrer, userAgent).fork());
         }
     }
 }

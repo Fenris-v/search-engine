@@ -69,11 +69,13 @@ public class Indexing {
     private void setPages(@NotNull Statement statement) throws SQLException {
         ResultSet result = statement.executeQuery(getAllPagesSql);
         while (result.next()) {
+            // todo
             pages.add(new Page(
                             result.getInt("id"),
                             result.getString("path"),
                             result.getInt("code"),
-                            result.getString("content")
+                            result.getString("content"),
+                            1
                     )
             );
         }

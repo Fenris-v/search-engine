@@ -10,10 +10,10 @@ import java.util.List;
 import java.util.Set;
 
 public class LinkCleaner {
-    private static String domain;
+    private static String regex;
 
     static Set<String> clearLinks(@NotNull Elements links, String parentUrl, String domain, HashSet<String> urlSet) {
-        LinkCleaner.domain = domain;
+        regex = "^(".concat(domain).concat(").*");
 
         for (Element url : links) {
             addLinkToSet(url, parentUrl, urlSet);
@@ -23,6 +23,7 @@ public class LinkCleaner {
     }
 
     private static void addLinkToSet(@NotNull Element url, String parentUrl, HashSet<String> urlSet) {
+
         String link = url.absUrl("href");
         if (isNotChildLinks(link)) {
             return;
@@ -59,7 +60,7 @@ public class LinkCleaner {
     }
 
     private static boolean isNotChildLinks(@NotNull String link) {
-        return !link.contains(domain);
+        return !link.matches(regex);
     }
 
     private static boolean isFileLink(@NotNull String link) {

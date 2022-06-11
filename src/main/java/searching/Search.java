@@ -1,10 +1,9 @@
 package searching;
 
-import db.DbConnection;
+import db.Connection;
 import entities.Lemma;
 import models.Result;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Set;
@@ -13,11 +12,11 @@ public class Search {
     public final static int SNIPPET_LENGTH = 250;
 
     private final String searchRequest;
-    private final Connection connection;
+    private final java.sql.Connection connection;
 
     public Search(String searchRequest) {
         this.searchRequest = searchRequest;
-        connection = new DbConnection().getConnection();
+        connection = Connection.getInstance().getConnection();
     }
 
     public Set<Result> execute() {
@@ -31,7 +30,7 @@ public class Search {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         } finally {
-            DbConnection.closeConnection(connection);
+            Connection.closeConnection(connection);
         }
     }
 }

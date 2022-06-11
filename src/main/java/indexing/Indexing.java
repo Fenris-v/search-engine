@@ -1,11 +1,10 @@
 package indexing;
 
-import db.DbConnection;
+import db.Connection;
 import entities.Field;
 import entities.Page;
 import org.jetbrains.annotations.NotNull;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -13,7 +12,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class Indexing {
-    private final Connection connection;
+    private final java.sql.Connection connection;
     private final Set<Field> fields = new HashSet<>();
     private final Set<Page> pages = new HashSet<>();
 
@@ -21,7 +20,7 @@ public class Indexing {
     private static final String getAllFieldsSql = "SELECT * FROM fields";
 
     public Indexing() {
-        connection = new DbConnection().getConnection();
+        connection = Connection.getInstance().getConnection();
 
         assert connection != null;
         try (Statement statement = connection.createStatement()) {
@@ -32,7 +31,7 @@ public class Indexing {
         }
     }
 
-    Connection getConnection() {
+    java.sql.Connection getConnection() {
         return connection;
     }
 

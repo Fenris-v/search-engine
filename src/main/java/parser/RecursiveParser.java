@@ -4,6 +4,7 @@ import entities.Page;
 import exceptions.ServerNotRespondingException;
 import org.jetbrains.annotations.NotNull;
 import org.jsoup.Connection;
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.select.Elements;
 
@@ -15,36 +16,35 @@ import java.util.concurrent.RecursiveTask;
 
 public class RecursiveParser extends RecursiveTask<Map<String, Page>> {
     private final String parent;
-    private final String domain;
-    private final String referrer;
-    private final String userAgent;
 
     private final List<RecursiveParser> tasks = new ArrayList<>();
+    private final Parser parser;
 
-    public RecursiveParser(String domain, String parent, String referrer, String userAgent) {
-        System.out.println(domain);
-        this.domain = domain;
+    public RecursiveParser(Parser parser, String parent) {
+        this.parser = parser;
         this.parent = parent;
-        this.referrer = referrer;
-        this.userAgent = userAgent;
     }
 
     @Override
     protected Map<String, Page> compute() {
+        String link = parser.getDomain().concat("/");
+
         try {
-            if (Parser.pageMap.containsKey(parent)) {
+            if (parser.getPageMap().containsKey(parent)) {
                 return null;
             }
 
             Connection.Response response = getResponse(parent);
-            addPageToMap("/", response, domain.concat("/"));
+            addPageToMap("/", response, link);
 
-            Set<String> urls = getLinks(response, domain.concat("/"));
+            Set<String> urls = getLinks(response, link);
             for (String url : urls) {
                 if (url != null) {
                     tryAddPage(url);
                 }
             }
+        } catch (HttpStatusException e) {
+            ParserErrorHandler.saveNotOkResponse(e, parser, link);
         } catch (IOException | ServerNotRespondingException | InterruptedException e) {
             Parser.logger.warn(e.getMessage());
         }
@@ -62,45 +62,43 @@ public class RecursiveParser extends RecursiveTask<Map<String, Page>> {
         }
     }
 
-    private @NotNull Connection.Response getResponse(String path) throws IOException, ServerNotRespondingException {
-        Connection.Response response = Jsoup.connect(path)
-                .userAgent(userAgent)
-                .referrer(referrer)
+    private @NotNull Connection.Response getResponse(String path) throws IOException {
+        return Jsoup.connect(path)
+                .userAgent(parser.getUserAgent())
+                .referrer(parser.getReferrer())
                 .timeout(5_000)
                 .execute();
-
-        if (response.statusCode() >= 500) {
-            throw new ServerNotRespondingException();
-        }
-
-        return response;
     }
 
     private void addPageToMap(String path, @NotNull Connection.Response response, String url) {
-        // todo
-        Page page = new Page(path, response.statusCode(), response.body(), 1);
-        Parser.pageMap.put(url, page);
+        Page page = new Page(path, response.statusCode(), response.body(), parser.getSiteId());
+        parser.getPageMap().put(url, page);
     }
 
     private Set<String> getLinks(@NotNull Connection.Response response, String parentLink) throws IOException {
         Elements links = response.parse().select("a");
-        return LinkCleaner.clearLinks(links, parentLink, domain, new HashSet<>());
+        return LinkCleaner.clearLinks(links, parentLink, parser.getDomain(), new HashSet<>());
     }
 
-    private void addPageRecursive(String url) throws IOException, ServerNotRespondingException, InterruptedException {
-        if (Parser.pageMap.containsKey(url)) {
+    private void addPageRecursive(String url) throws IOException, InterruptedException {
+        if (parser.getPageMap().containsKey(url)) {
             return;
         }
 
         Thread.sleep(500);
-        Connection.Response response = getResponse(url);
 
-        String path = url.replaceAll(domain, "");
-        addPageToMap(path, response, url);
+        try {
+            Connection.Response response = getResponse(url);
 
-        Set<String> urls = getLinks(response, url);
-        for (String link : urls) {
-            tasks.add((RecursiveParser) new RecursiveParser(domain, link, referrer, userAgent).fork());
+            String path = url.replaceAll(parser.getDomain(), "");
+            addPageToMap(path, response, url);
+
+            Set<String> urls = getLinks(response, url);
+            for (String link : urls) {
+                tasks.add((RecursiveParser) new RecursiveParser(parser, link).fork());
+            }
+        } catch (HttpStatusException e) {
+            ParserErrorHandler.saveNotOkResponse(e, parser, url);
         }
     }
 }

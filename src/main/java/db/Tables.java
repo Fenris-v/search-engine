@@ -3,16 +3,15 @@ package db;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 
 public class Tables {
     public static void createTables() {
-        DbConnection dbConnection = new DbConnection();
+        Connection dbConnection = Connection.getInstance();
 
-        try (Connection connection = dbConnection.getConnection()) {
+        try (java.sql.Connection connection = dbConnection.getConnection()) {
             assert connection != null;
             try (Statement statement = connection.createStatement()) {
                 statement.execute("DROP TABLE IF EXISTS indexes");
@@ -46,7 +45,7 @@ public class Tables {
         statement.execute("CREATE UNIQUE INDEX pages_path_uindex ON pages (path)");
     }
 
-    private static void createFieldsTable(@NotNull Statement statement, @NotNull Connection connection)
+    private static void createFieldsTable(@NotNull Statement statement, @NotNull java.sql.Connection connection)
             throws SQLException {
         statement.execute("CREATE TABLE IF NOT EXISTS fields("
                 .concat("id SERIAL PRIMARY KEY, ")
@@ -109,6 +108,8 @@ public class Tables {
                 .concat("last_error TEXT, ")
                 .concat("url VARCHAR(255) NOT NULL, ")
                 .concat("name VARCHAR(255) NOT NULL)"));
+
+        statement.execute("CREATE UNIQUE INDEX sites_url_uindex ON sites (url)");
     }
 
     private static void createPgStatusEnum(@NotNull Statement statement) throws SQLException {

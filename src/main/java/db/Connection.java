@@ -4,12 +4,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import services.YamlReader;
 
-import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Map;
 
-public class DbConnection {
+public class Connection {
+    private static Connection INSTANCE;
+
     private final String url;
     private final String user;
     private final String password;
@@ -23,14 +24,22 @@ public class DbConnection {
 //    @Value("${db.password}")
 //    public String password;
 
-    public DbConnection() {
+    private Connection() {
         Map<String, String> data = YamlReader.getConfigs("db");
         url = data.get("url");
         user = data.get("user");
         password = data.get("password");
     }
 
-    public @Nullable Connection getConnection() {
+    public static Connection getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new Connection();
+        }
+
+        return INSTANCE;
+    }
+
+    public @Nullable java.sql.Connection getConnection() {
         try {
             return DriverManager.getConnection(url, user, password);
         } catch (SQLException e) {
@@ -40,7 +49,7 @@ public class DbConnection {
         return null;
     }
 
-    public static void closeConnection(@NotNull Connection connection) {
+    public static void closeConnection(@NotNull java.sql.Connection connection) {
         try {
             connection.close();
         } catch (SQLException e) {

@@ -1,7 +1,9 @@
 package parser;
 
-import db.DbConnection;
 import entities.Page;
+import enums.SiteStatus;
+import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import services.YamlReader;
@@ -9,23 +11,37 @@ import services.YamlReader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
 
 public class Parser implements Runnable {
+    @Getter
     private final String referrer;
+    @Getter
     private final String userAgent;
 
+    @Getter
     private final String domain;
+    @Getter
+    private final int siteId;
     private int batchSize = 0;
 
-    public volatile static Map<String, Page> pageMap = new ConcurrentHashMap<>();
+    @Getter
+    private final Map<String, Page> pageMap;
     static final Logger logger = LoggerFactory.getLogger(Parser.class);
-    private final DbConnection dbConnection = new DbConnection();
+    private Connection connection = null;
 
-    public Parser(String domain) {
+    public Parser(String domain, int id, Map<String, Page> pageMap) {
+        try {
+            connection = db.Connection.getInstance().getConnection();
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+        }
+
+        this.pageMap = pageMap;
         this.domain = domain;
+        siteId = id;
 
         Map<String, String> data = YamlReader.getConfigs("parser");
         referrer = data.get("referrer");
@@ -34,34 +50,27 @@ public class Parser implements Runnable {
 
     @Override
     public void run() {
-        parseSite();
-    }
+        new ForkJoinPool().invoke(new RecursiveParser(this, domain.concat("/")));
 
-    public void parseSite() {
-        try {
-            throw new SQLException();
-        } catch (SQLException e) {
-            logger.error(e.getMessage());
+        if (pageMap.isEmpty()) {
+            setSiteStatus(SiteStatus.FAILED);
+            return;
         }
 
-        new ForkJoinPool().invoke(new RecursiveParser(domain, domain.concat("/"), referrer, userAgent));
         savePages();
+        db.Connection.closeConnection(connection);
     }
 
     private void savePages() {
-        // todo: add site_id
-        String sql = "INSERT INTO pages (code, content, path, site_id) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO pages (code, content, path, site_id) VALUES (?, ?, ?, ?)";
 
-        try (Connection connection = dbConnection.getConnection()) {
-            assert connection != null;
-
-            PreparedStatement statement = connection.prepareStatement(sql);
-            addBatch(statement);
-
-            statement.executeBatch();
-            statement.close();
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            addBatch(preparedStatement);
+            preparedStatement.executeBatch();
         } catch (SQLException e) {
             logger.error(e.getMessage());
+        } finally {
+            setSiteStatus(SiteStatus.INDEXED);
         }
     }
 
@@ -70,6 +79,7 @@ public class Parser implements Runnable {
             statement.setInt(1, page.getCode());
             statement.setString(2, page.getContent());
             statement.setString(3, page.getPath());
+            statement.setInt(4, siteId);
 
             statement.addBatch();
             batchSize++;
@@ -78,6 +88,17 @@ public class Parser implements Runnable {
                 statement.executeBatch();
                 batchSize = 0;
             }
+        }
+    }
+
+    private void setSiteStatus(@NotNull SiteStatus status) {
+        String sqlSiteStatus = "UPDATE sites SET status = '".concat(status.name())
+                .concat("' WHERE id = ").concat(String.valueOf(siteId));
+
+        try (Statement statement = connection.createStatement()) {
+            statement.execute(sqlSiteStatus);
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
         }
     }
 }

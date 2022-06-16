@@ -1,7 +1,18 @@
-db:
-  user: engine
-  password: password
-  url: jdbc:postgresql://localhost:5432/search_engine
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/search_engine?serverTimezone=Europe/Moscow&useSSL=false
+    username: engine
+    password: password
+
+  jpa:
+    generate-ddl: false
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+
+  sql:
+    init:
+      mode: always
 
 sites:
   - url: http://www.playback.ru

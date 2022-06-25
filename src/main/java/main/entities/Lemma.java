@@ -26,7 +26,7 @@ public class Lemma implements Comparable<Lemma> {
     private int frequency;
 
     @ManyToOne(cascade = CascadeType.REMOVE)
-    @JoinColumn(name = "siteId", nullable = false)
+    @JoinColumn(name = "site_id", nullable = false)
     private Site site;
 
     private LocalDateTime createdAt = LocalDateTime.now();

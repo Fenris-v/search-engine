@@ -27,7 +27,7 @@ public class RecursiveParser extends RecursiveTask<Map<String, Page>> {
 
     @Override
     protected Map<String, Page> compute() {
-        String link = parser.getDomain().concat("/");
+        String link = parser.getSite().getUrl().concat("/");
 
         try {
             if (parser.getPageMap().containsKey(parent)) {
@@ -35,17 +35,17 @@ public class RecursiveParser extends RecursiveTask<Map<String, Page>> {
             }
 
             Connection.Response response = getResponse(parent);
-//            addPageToMap("/", response, link);
-//
-//            Set<String> urls = getLinks(response, link);
-//            for (String url : urls) {
-//                if (url != null) {
-//                    tryAddPage(url);
-//                }
-//            }
+            addPageToMap("/", response, link);
+
+            Set<String> urls = getLinks(response, link);
+            for (String url : urls) {
+                if (url != null) {
+                    tryAddPage(url);
+                }
+            }
         } catch (HttpStatusException e) {
             ParserErrorHandler.saveNotOkResponse(e, parser, link);
-        } catch (IOException /*| ServerNotRespondingException | InterruptedException*/ e) {
+        } catch (IOException | ServerNotRespondingException | InterruptedException e) {
             Parser.logger.warn(e.getMessage());
         }
 
@@ -71,13 +71,18 @@ public class RecursiveParser extends RecursiveTask<Map<String, Page>> {
     }
 
     private void addPageToMap(String path, @NotNull Connection.Response response, String url) {
-//        Page page = new Page(path, response.statusCode(), response.body(), parser.getSiteId());
-//        parser.getPageMap().put(url, page);
+        Page page = new Page();
+        page.setPath(path);
+        page.setCode(response.statusCode());
+        page.setContent(response.body());
+        page.setSite(parser.getSite());
+
+        parser.getPageMap().put(url, page);
     }
 
     private Set<String> getLinks(@NotNull Connection.Response response, String parentLink) throws IOException {
         Elements links = response.parse().select("a");
-        return LinkCleaner.clearLinks(links, parentLink, parser.getDomain(), new HashSet<>());
+        return LinkCleaner.clearLinks(links, parentLink, parser.getSite().getUrl(), new HashSet<>());
     }
 
     private void addPageRecursive(String url) throws IOException, InterruptedException {
@@ -90,7 +95,7 @@ public class RecursiveParser extends RecursiveTask<Map<String, Page>> {
         try {
             Connection.Response response = getResponse(url);
 
-            String path = url.replaceAll(parser.getDomain(), "");
+            String path = url.replaceAll(parser.getSite().getUrl(), "");
             addPageToMap(path, response, url);
 
             Set<String> urls = getLinks(response, url);

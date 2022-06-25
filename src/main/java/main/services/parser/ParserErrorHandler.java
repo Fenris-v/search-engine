@@ -1,30 +1,19 @@
 package main.services.parser;
 
+import main.entities.Page;
 import org.jetbrains.annotations.NotNull;
 import org.jsoup.HttpStatusException;
 
 public class ParserErrorHandler {
-    static void saveNotOkResponse(@NotNull HttpStatusException e, @NotNull Parser parser, String url) {
-//        java.sql.Connection connection = Connection.getInstance().getConnection();
-//
-//        Page page = new Page(getPath(parser.getDomain(), url), e.getStatusCode(), null, parser.getSiteId());
-//        parser.getPageMap().put(url, page);
-//
-//        if (connection == null) {
-//            return;
-//        }
-//
-//        try (Statement statement = connection.createStatement()) {
-//            String sql = "UPDATE sites SET status_time = NOW() , last_error = '"
-//                    .concat(e.getMessage())
-//                    .concat("' WHERE url = '")
-//                    .concat(parser.getDomain())
-//                    .concat("'");
-//
-//            statement.execute(sql);
-//        } catch (SQLException ex) {
-//            throw new RuntimeException(ex);
-//        }
+    static void saveNotOkResponse(@NotNull HttpStatusException e, @NotNull Parser parser, String relativeUrl) {
+        Page page = new Page();
+        page.setPath(getPath(parser.getSite().getUrl(), relativeUrl));
+        page.setCode(e.getStatusCode());
+        page.setContent(null);
+        page.setSite(parser.getSite());
+
+        parser.getPageMap().put(relativeUrl, page);
+        parser.saveParseError(e.getMessage());
     }
 
     private static @NotNull String getPath(@NotNull String domain, @NotNull String url) {

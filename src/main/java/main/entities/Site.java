@@ -1,13 +1,15 @@
 package main.entities;
 
 import lombok.Getter;
-import main.enums.SiteStatus;
+import lombok.Setter;
 
 import javax.persistence.Index;
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
+@Setter
 @Entity
 @Table(indexes = {
         @Index(name = "urlIndex", columnList = "url")
@@ -17,11 +19,9 @@ public class Site {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(nullable = false)
-    private SiteStatus status;
+    private String status;
 
-    @Column(nullable = false)
-    private LocalDateTime statusTime = LocalDateTime.now();
+    private LocalDateTime statusTime;
 
     private String lastError;
 
@@ -34,4 +34,12 @@ public class Site {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     private LocalDateTime updatedAt = LocalDateTime.now();
+
+    @OneToMany
+    @JoinColumn(name = "site_id")
+    private List<Page> pages;
+
+    @OneToMany
+    @JoinColumn(name = "site_id")
+    private List<Lemma> lemmas;
 }

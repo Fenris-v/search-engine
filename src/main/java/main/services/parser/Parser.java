@@ -2,59 +2,57 @@ package main.services.parser;
 
 import lombok.Getter;
 import main.entities.Page;
+import main.entities.Site;
 import main.enums.SiteStatus;
 import main.repositories.PageRepository;
-import main.services.YamlReader;
+import main.repositories.SiteRepository;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 
-//@Service
 public class Parser implements Runnable {
-//    @Value("${parser.referrer}")
-//    private String referrer;
-
-    @Autowired
-    private PageRepository pageRepository;
-
     @Getter
-    private final String referrer;
-    @Getter
-    private final String userAgent;
-
-    @Getter
-    private final String domain;
-    @Getter
-    private final int siteId;
-    private final int batchSize = 0;
+    private final Site site;
 
     @Getter
     private final Map<String, Page> pageMap;
     static final Logger logger = LoggerFactory.getLogger(Parser.class);
-    private final Connection connection = null;
 
-    public Parser(String domain, int id, Map<String, Page> pageMap) {
+    @Getter
+    private final String referrer;
+
+    @Getter
+    private final String userAgent;
+
+    private final SiteRepository siteRepository;
+
+    private final PageRepository pageRepository;
+
+    public Parser(Site site, Map<String, Page> pageMap, @NotNull SiteParser siteParser) {
         this.pageMap = pageMap;
-        this.domain = domain;
-        siteId = id;
+        this.site = site;
+        referrer = siteParser.getApplicationProps().getUserAgent();
+        userAgent = siteParser.getApplicationProps().getUserAgent();
+        siteRepository = siteParser.getSiteRepository();
+        pageRepository = siteParser.getPageRepository();
+    }
 
-        Map<String, String> data = YamlReader.getConfigs("parser");
-        referrer = data.get("referrer");
-        userAgent = data.get("user_agent");
+    public void saveParseError(String message) {
+        site.setStatusTime(LocalDateTime.now());
+        site.setLastError(message);
+
+        siteRepository.save(site);
     }
 
     @Override
     public void run() {
-        new ForkJoinPool().invoke(new RecursiveParser(this, domain.concat("/")));
+        new ForkJoinPool().invoke(new RecursiveParser(this, site.getUrl().concat("/")));
 
-        if (pageMap.isEmpty()) {
+        if (pageMap.size() <= 1) {
             setSiteStatus(SiteStatus.FAILED);
             return;
         }
@@ -64,43 +62,11 @@ public class Parser implements Runnable {
 
     private void savePages() {
         pageRepository.saveAll(pageMap.values());
-//        String sql = "INSERT INTO pages (code, content, path, site_id) VALUES (?, ?, ?, ?)";
-//
-//        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-//            addBatch(preparedStatement);
-//            preparedStatement.executeBatch();
-//        } catch (SQLException e) {
-//            logger.error(e.getMessage());
-//        } finally {
-//            setSiteStatus(SiteStatus.INDEXED);
-//        }
+        setSiteStatus(SiteStatus.INDEXED);
     }
 
-//    private void addBatch(PreparedStatement statement) throws SQLException {
-//        for (Page page : pageMap.values()) {
-//            statement.setInt(1, page.getCode());
-//            statement.setString(2, page.getContent());
-//            statement.setString(3, page.getPath());
-//            statement.setInt(4, siteId);
-//
-//            statement.addBatch();
-//            batchSize++;
-//
-//            if (batchSize >= 1_000) {
-//                statement.executeBatch();
-//                batchSize = 0;
-//            }
-//        }
-//    }
-
     private void setSiteStatus(@NotNull SiteStatus status) {
-        String sqlSiteStatus = "UPDATE sites SET status = '".concat(status.name())
-                .concat("' WHERE id = ").concat(String.valueOf(siteId));
-
-        try (Statement statement = connection.createStatement()) {
-            statement.execute(sqlSiteStatus);
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
+        site.setStatus(status.name());
+        siteRepository.save(site);
     }
 }

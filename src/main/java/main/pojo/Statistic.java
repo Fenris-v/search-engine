@@ -17,8 +17,9 @@ public class Statistic {
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
     private final long pages;
+    private final long lemmas;
 
-    public Statistic(@NotNull Site site, long pages) {
+    public Statistic(@NotNull Site site, long pages, long lemmas) {
         id = site.getId();
         status = site.getStatus();
         statusTime = site.getStatusTime();
@@ -28,5 +29,6 @@ public class Statistic {
         createdAt = site.getCreatedAt();
         updatedAt = site.getUpdatedAt();
         this.pages = pages;
+        this.lemmas = lemmas;
     }
 }

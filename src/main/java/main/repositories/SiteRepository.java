@@ -8,6 +8,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SiteRepository extends CrudRepository<Site, Long> {
-    @Query("SELECT new main.pojo.Statistic(s, COUNT(p)) FROM Site s LEFT JOIN Page.id p")
+    @Query("SELECT new main.pojo.Statistic(s, COUNT(p.id), COUNT(l.id)) FROM Site s " +
+            "LEFT JOIN Page p ON p.site = s " +
+            "LEFT JOIN Lemma l ON l.site = s GROUP BY s")
     Iterable<Statistic> getStatistic();
 }

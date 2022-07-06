@@ -4,6 +4,7 @@ import main.pojo.Statistic;
 import main.repositories.SiteRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -15,9 +16,12 @@ public class StatisticService {
     }
 
     public Map<String, Object> get() {
-        Iterable<Statistic> statistic = siteRepository.getStatistic();
-        System.out.println(statistic);
+        Iterable<Statistic> statistics = siteRepository.getStatistic();
 
-        return null;
+        Map<String, Object> response = new HashMap<>();
+        response.put("result", true);
+        response.put("statistics", statistics);
+
+        return response;
     }
 }

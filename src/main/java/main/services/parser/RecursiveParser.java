@@ -44,7 +44,7 @@ public class RecursiveParser extends RecursiveTask<Map<String, Page>> {
                 }
             }
         } catch (HttpStatusException e) {
-            ParserErrorHandler.saveNotOkResponse(e, parser, link);
+            saveNotOkResponse(e, link);
         } catch (IOException | ServerNotRespondingException | InterruptedException e) {
             Parser.logger.warn(e.getMessage());
         }
@@ -62,6 +62,39 @@ public class RecursiveParser extends RecursiveTask<Map<String, Page>> {
         }
     }
 
+    private void addPageRecursive(String url) throws IOException, InterruptedException {
+        if (parser.getPageMap().containsKey(url)) {
+            return;
+        }
+
+        Thread.sleep(500);
+
+        try {
+            Connection.Response response = getResponse(url);
+
+            String path = url.replaceAll(parser.getSite().getUrl(), "");
+            addPageToMap(path, response, url);
+
+            if (parser.getPageMap().size() >= 1000) {
+                savePages();
+            }
+
+            Set<String> urls = getLinks(response, url);
+            for (String link : urls) {
+                tasks.add((RecursiveParser) new RecursiveParser(parser, link).fork());
+            }
+        } catch (HttpStatusException e) {
+            saveNotOkResponse(e, url);
+        }
+    }
+
+    private synchronized void savePages() {
+        if (parser.getPageMap().size() >= 1000) {
+            parser.getPageRepository().saveAll(parser.getPageMap().values());
+            parser.getPageMap().clear();
+        }
+    }
+
     private @NotNull Connection.Response getResponse(String path) throws IOException {
         return Jsoup.connect(path)
                 .userAgent(parser.getUserAgent())
@@ -70,7 +103,7 @@ public class RecursiveParser extends RecursiveTask<Map<String, Page>> {
                 .execute();
     }
 
-    private void addPageToMap(String path, @NotNull Connection.Response response, String url) {
+    private void addPageToMap(String path, @NotNull Connection.Response response, String url) throws IOException {
         Page page = new Page();
         page.setPath(path);
         page.setCode(response.statusCode());
@@ -85,25 +118,20 @@ public class RecursiveParser extends RecursiveTask<Map<String, Page>> {
         return LinkCleaner.clearLinks(links, parentLink, parser.getSite().getUrl(), new HashSet<>());
     }
 
-    private void addPageRecursive(String url) throws IOException, InterruptedException {
-        if (parser.getPageMap().containsKey(url)) {
-            return;
-        }
+    private void saveNotOkResponse(@NotNull HttpStatusException e, String relativeUrl) {
+        Page page = new Page();
+        page.setPath(getPath(parser.getSite().getUrl(), relativeUrl));
+        page.setCode(e.getStatusCode());
+        page.setContent("");
+        page.setSite(parser.getSite());
 
-        Thread.sleep(500);
+        parser.getPageMap().put(relativeUrl, page);
+        parser.saveParseError(e.getMessage());
+    }
 
-        try {
-            Connection.Response response = getResponse(url);
-
-            String path = url.replaceAll(parser.getSite().getUrl(), "");
-            addPageToMap(path, response, url);
-
-            Set<String> urls = getLinks(response, url);
-            for (String link : urls) {
-                tasks.add((RecursiveParser) new RecursiveParser(parser, link).fork());
-            }
-        } catch (HttpStatusException e) {
-            ParserErrorHandler.saveNotOkResponse(e, parser, url);
-        }
+    private static @NotNull String getPath(@NotNull String domain, @NotNull String url) {
+        String path = url.replaceAll(domain, "");
+        path = path.isEmpty() ? "/" : path;
+        return path;
     }
 }

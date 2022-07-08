@@ -37,7 +37,7 @@ create table page
     code       int4         not null,
     content    TEXT         not null,
     created_at timestamp,
-    path       varchar(255) not null,
+    path       TEXT not null,
     updated_at timestamp,
     site_id    int8         not null,
     primary key (id)

@@ -30,6 +30,7 @@ public class Parser implements Runnable {
 
     private final SiteRepository siteRepository;
 
+    @Getter
     private final PageRepository pageRepository;
 
     public Parser(Site site, Map<String, Page> pageMap, @NotNull SiteParser siteParser) {

@@ -6,16 +6,17 @@ import main.services.parser.SiteParser;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 @RestController
-public class ApiController {
+public class ApiController extends AbstractApiController {
     private final SiteParser siteParser;
 
     private final StatisticService statisticService;
+
+    public static boolean IS_PARSE = false;
 
     public ApiController(SiteParser siteParser, StatisticService statisticService) {
         this.siteParser = siteParser;
@@ -24,40 +25,15 @@ public class ApiController {
 
     @GetMapping("/api/startIndexing")
     public Map<String, Object> index() {
+        IS_PARSE = true;
         siteParser.run();
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("result", true);
-
-        return response;
+        return getBoolResponse();
     }
 
     @GetMapping("/api/stopIndexing")
     public Map<String, Object> stopIndex() {
-//        System.out.println(pools);
-//        for (ForkJoinPool pool : pools) {
-//            pool.shutdownNow();
-//            pool.shutdown();
-//            try {
-//                pool.awaitTermination(1, TimeUnit.SECONDS);
-//            } catch (InterruptedException e) {
-//                throw new RuntimeException(e);
-//            }
-//        }
-
-//        ForkJoinPool pool1 = ForkJoinPool.commonPool();
-//        ForkJoinPool.commonPool().shutdownNow();
-//        System.out.println(pool1);
-//        pool1.shutdownNow();
-
-//        for (Thread thread : threads) {
-//            thread.interrupt();
-//        }
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("result", true);
-
-        return response;
+        IS_PARSE = false;
+        return getBoolResponse();
     }
 
     @GetMapping("/api/indexPage")

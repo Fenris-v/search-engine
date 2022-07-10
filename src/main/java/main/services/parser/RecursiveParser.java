@@ -1,5 +1,6 @@
 package main.services.parser;
 
+import main.controllers.ApiController;
 import main.entities.Page;
 import main.exceptions.ServerNotRespondingException;
 import org.jetbrains.annotations.NotNull;
@@ -39,6 +40,11 @@ public class RecursiveParser extends RecursiveTask<Map<String, Page>> {
 
             Set<String> urls = getLinks(response, link);
             for (String url : urls) {
+                if (!ApiController.IS_PARSE) {
+                    tasks.clear();
+                    return null;
+                }
+
                 if (url != null) {
                     tryAddPage(url);
                 }

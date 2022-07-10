@@ -5,14 +5,13 @@ import main.entities.Page;
 import main.entities.Site;
 import main.enums.SiteStatus;
 import main.repositories.PageRepository;
-import main.repositories.SiteRepository;
+import main.services.indexing.Indexing;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.Map;
-import java.util.concurrent.ForkJoinPool;
 
 public class Parser implements Runnable {
     @Getter
@@ -28,17 +27,17 @@ public class Parser implements Runnable {
     @Getter
     private final String userAgent;
 
-    private final SiteRepository siteRepository;
-
     @Getter
     private final PageRepository pageRepository;
+
+    private final SiteParser siteParser;
 
     public Parser(Site site, Map<String, Page> pageMap, @NotNull SiteParser siteParser) {
         this.pageMap = pageMap;
         this.site = site;
+        this.siteParser = siteParser;
         referrer = siteParser.getApplicationProps().getUserAgent();
         userAgent = siteParser.getApplicationProps().getUserAgent();
-        siteRepository = siteParser.getSiteRepository();
         pageRepository = siteParser.getPageRepository();
     }
 
@@ -46,19 +45,20 @@ public class Parser implements Runnable {
         site.setStatusTime(LocalDateTime.now());
         site.setLastError(message);
 
-        siteRepository.save(site);
+        siteParser.getSiteRepository().save(site);
     }
 
     @Override
     public void run() {
-        new ForkJoinPool().invoke(new RecursiveParser(this, site.getUrl().concat("/")));
-
-        if (pageMap.size() <= 1) {
-            setSiteStatus(SiteStatus.FAILED);
-            return;
-        }
-
-        savePages();
+//        new ForkJoinPool().invoke(new RecursiveParser(this, site.getUrl().concat("/")));
+//
+//        if (pageMap.size() <= 1) {
+//            setSiteStatus(SiteStatus.FAILED);
+//            return;
+//        }
+//
+//        savePages();
+        new Indexing(siteParser.getFields(), pageRepository).execute(site);
     }
 
     private void savePages() {
@@ -68,6 +68,6 @@ public class Parser implements Runnable {
 
     private void setSiteStatus(@NotNull SiteStatus status) {
         site.setStatus(status.name());
-        siteRepository.save(site);
+        siteParser.getSiteRepository().save(site);
     }
 }

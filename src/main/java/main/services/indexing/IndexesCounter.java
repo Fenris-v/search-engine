@@ -10,9 +10,7 @@ import org.jsoup.nodes.Element;
 
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,14 +34,14 @@ public class IndexesCounter {
     }
 
     private void setLemmas() {
-        try (Statement statement = indexing.getConnection().createStatement()) {
-            ResultSet result = statement.executeQuery("SELECT * FROM lemmas");
-            while (result.next()) {
-                lemmas.put(result.getString("lemma"), result.getInt("id"));
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+//        try (Statement statement = indexing.getConnection().createStatement()) {
+//            ResultSet result = statement.executeQuery("SELECT * FROM lemmas");
+//            while (result.next()) {
+//                lemmas.put(result.getString("lemma"), result.getInt("id"));
+//            }
+//        } catch (SQLException e) {
+//            throw new RuntimeException(e);
+//        }
     }
 
     private void saveIndexes(@NotNull Page page) {
@@ -79,10 +77,10 @@ public class IndexesCounter {
     }
 
     private void executeSavingIndexes(Page page) throws SQLException {
-        preparedStatement = indexing.getConnection().prepareStatement(addIndexSql);
-        wordsWeight.forEach((word, weight) -> addIndexToBatch(page, word, weight));
-        preparedStatement.executeBatch();
-        preparedStatement.close();
+//        preparedStatement = indexing.getConnection().prepareStatement(addIndexSql);
+//        wordsWeight.forEach((word, weight) -> addIndexToBatch(page, word, weight));
+//        preparedStatement.executeBatch();
+//        preparedStatement.close();
     }
 
     private void addIndexToBatch(@NotNull Page page, String word, @NotNull Float weight) {

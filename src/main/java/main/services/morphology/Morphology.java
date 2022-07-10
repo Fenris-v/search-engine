@@ -1,5 +1,6 @@
 package main.services.morphology;
 
+import main.services.searching.Search;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.WrongCharaterException;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
@@ -107,9 +108,9 @@ public class Morphology {
     }
 
     private @NotNull String cutSnippet(@NotNull String snippet) {
-//        if (snippet.length() > Search.SNIPPET_LENGTH) {
-//            snippet = snippet.substring(0, Search.SNIPPET_LENGTH - 3).concat("...");
-//        }
+        if (snippet.length() > Search.SNIPPET_LENGTH) {
+            snippet = snippet.substring(0, Search.SNIPPET_LENGTH - 3).concat("...");
+        }
 
         return snippet;
     }

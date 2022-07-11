@@ -4,12 +4,9 @@ import lombok.Getter;
 import main.entities.Field;
 import main.entities.Page;
 import main.entities.Site;
+import main.repositories.LemmaRepository;
 import main.repositories.PageRepository;
-import org.jetbrains.annotations.NotNull;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -19,14 +16,18 @@ public class Indexing {
 
     private final Set<Page> pages = new HashSet<>();
 
-    private static final String getAllPagesSql = "SELECT * FROM pages";
+    // private static final String getAllPagesSql = "SELECT * FROM pages";
 
     @Getter
     private final PageRepository pageRepository;
 
-    public Indexing(Iterable<Field> fields, PageRepository pageRepository) {
+    @Getter
+    private final LemmaRepository lemmaRepository;
+
+    public Indexing(Iterable<Field> fields, PageRepository pageRepository, LemmaRepository lemmaRepository) {
         this.fields = fields;
         this.pageRepository = pageRepository;
+        this.lemmaRepository = lemmaRepository;
     }
 
     Set<Page> getPages() {
@@ -36,20 +37,5 @@ public class Indexing {
     public void execute(Site site) {
         new LemmasCounter(this, site).execute();
 //        new IndexesCounter(this).execute();
-    }
-
-    private void setPages(@NotNull Statement statement) throws SQLException {
-        ResultSet result = statement.executeQuery(getAllPagesSql);
-        while (result.next()) {
-            // todo
-//            pages.add(new Page(
-//                            result.getInt("id"),
-//                            result.getString("path"),
-//                            result.getInt("code"),
-//                            result.getString("content"),
-//                            1
-//                    )
-//            );
-        }
     }
 }

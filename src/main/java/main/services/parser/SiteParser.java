@@ -6,6 +6,7 @@ import main.entities.Site;
 import main.enums.SiteStatus;
 import main.pojo.ApplicationProps;
 import main.repositories.FieldRepository;
+import main.repositories.LemmaRepository;
 import main.repositories.PageRepository;
 import main.repositories.SiteRepository;
 import org.jetbrains.annotations.NotNull;
@@ -29,8 +30,10 @@ public class SiteParser {
     private final PageRepository pageRepository;
 
     @Getter
-    private final Iterable<Field> fields;
+    private final LemmaRepository lemmaRepository;
 
+    @Getter
+    private final Iterable<Field> fields;
 
     private final Map<String, String> sitesMap = new HashMap<>();
     private final List<String> existsDomains = new ArrayList<>();
@@ -42,11 +45,13 @@ public class SiteParser {
             ApplicationProps applicationProps,
             SiteRepository siteRepository,
             PageRepository pageRepository,
+            LemmaRepository lemmaRepository,
             @NotNull FieldRepository fieldRepository
     ) {
         this.applicationProps = applicationProps;
         this.siteRepository = siteRepository;
         this.pageRepository = pageRepository;
+        this.lemmaRepository = lemmaRepository;
 
         fields = fieldRepository.findAll();
     }

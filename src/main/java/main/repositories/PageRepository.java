@@ -7,8 +7,12 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Iterator;
+
 @Repository
 public interface PageRepository extends CrudRepository<Page, Long> {
     //    @Query("SELECT Page FROM Page p WHERE p.site = :site GROUP BY p")
-    org.springframework.data.domain.Page<Page> getPagesBySite(@Param("site") Site site, Pageable pageable);
+    org.springframework.data.domain.Page<Page> getPagesBySite(Pageable pageable, @Param("site") Site site);
+
+    Iterator<Page> findBySite(@Param("site") Site site);
 }

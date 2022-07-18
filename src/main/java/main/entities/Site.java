@@ -21,8 +21,10 @@ public class Site {
 
     private String status;
 
+    @Column(name = "status_time")
     private LocalDateTime statusTime;
 
+    @Column(name = "last_error")
     private String lastError;
 
     @Column(nullable = false)
@@ -31,8 +33,10 @@ public class Site {
     @Column(nullable = false)
     private String name;
 
+    @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
 
     @OneToMany

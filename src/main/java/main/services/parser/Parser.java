@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.Map;
-import java.util.concurrent.ForkJoinPool;
 
 public class Parser implements Runnable {
     @Getter
@@ -56,15 +55,15 @@ public class Parser implements Runnable {
 
     @Override
     public void run() {
-        new ForkJoinPool().invoke(new RecursiveParser(this, site.getUrl().concat("/")));
-
-        if (pageMap.size() <= 1) {
-            setSiteStatus(SiteStatus.FAILED);
-            return;
-        }
-
-        savePages();
-        new Indexing(siteParser.getFields(), pageRepository, lemmaRepository).execute(site);
+//        new ForkJoinPool().invoke(new RecursiveParser(this, site.getUrl().concat("/")));
+//
+//        if (pageMap.size() <= 1) {
+//            setSiteStatus(SiteStatus.FAILED);
+//            return;
+//        }
+//
+//        savePages();
+        new Indexing(siteParser.getFields()).execute(site);
     }
 
     private void savePages() {

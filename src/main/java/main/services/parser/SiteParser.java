@@ -84,16 +84,16 @@ public class SiteParser {
         sitesForDelete.add(site.getId());
     }
 
-    private void makeSite(@NotNull Map<String, String> site) {
-        if (existsDomains.contains(site.get("url"))) {
+    private void makeSite(@NotNull Map<String, String> siteInfo) {
+        if (existsDomains.contains(siteInfo.get("url"))) {
             return;
         }
 
-        Site newSite = new Site();
-        newSite.setName(site.get("name"));
-        newSite.setUrl(site.get("url"));
-        newSite.setStatus(SiteStatus.INDEXING.name());
-        sitesForAdding.add(newSite);
+        Site site = new Site();
+        site.setName(siteInfo.get("name"));
+        site.setUrl(siteInfo.get("url"));
+        site.setStatus(SiteStatus.INDEXING.name());
+        sitesForAdding.add(site);
     }
 
     private void makeThread(@NotNull Site site) {

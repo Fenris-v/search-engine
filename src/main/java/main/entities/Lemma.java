@@ -6,7 +6,6 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.persistence.Index;
 import javax.persistence.*;
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -28,10 +27,6 @@ public class Lemma implements Comparable<Lemma> {
     @ManyToOne(cascade = CascadeType.REMOVE)
     @JoinColumn(name = "site_id", nullable = false)
     private Site site;
-
-    private LocalDateTime createdAt = LocalDateTime.now();
-
-    private LocalDateTime updatedAt = LocalDateTime.now();
 
     @Override
     public int compareTo(@NotNull Lemma lemma) {

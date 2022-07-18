@@ -15,4 +15,7 @@ public interface PageRepository extends CrudRepository<Page, Long> {
     org.springframework.data.domain.Page<Page> getPagesBySite(Pageable pageable, @Param("site") Site site);
 
     Iterator<Page> findBySite(@Param("site") Site site);
+
+//    @Query(value = "SELECT * FROM page p WHERE site_id=:siteId LIMIT 5", nativeQuery = true)
+//    Iterator<Page> getPages(long siteId);
 }

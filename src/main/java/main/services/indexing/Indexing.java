@@ -6,7 +6,7 @@ import main.db.Connection;
 import main.entities.Field;
 import main.entities.Page;
 import main.entities.Site;
-import org.hibernate.Session;
+import org.hibernate.Transaction;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigInteger;
@@ -22,9 +22,6 @@ public class Indexing {
     private List<Page> pages;
 
     @Getter
-    private final Session session;
-
-    @Getter
     @Setter
     private Site site;
 
@@ -32,24 +29,31 @@ public class Indexing {
     private LemmasCounter lemmasCounter;
     private IndexesCounter indexesCounter;
 
+    private long start = System.currentTimeMillis();
+
+    @Getter
+    @Setter
+    private Transaction transaction;
+
+    @Getter
+    private final Connection connection = new Connection();
+
     private static final String pageCountSql = "SELECT * FROM page WHERE site_id = ? LIMIT ? OFFSET ?";
 
     public Indexing(Iterable<Field> fields) {
         this.fields = fields;
-        session = Connection.getSession();
     }
 
     public void execute(@NotNull Site site) {
         setSite(site);
 
         lemmasCounter = new LemmasCounter(this);
-        indexesCounter = new IndexesCounter(this);
+//        indexesCounter = new IndexesCounter(this);
 
-        session.beginTransaction();
+        transaction = connection.getSession().beginTransaction();
         countPages();
         index();
-        session.flush();
-        session.close();
+        connection.close();
     }
 
     private void countPages() {
@@ -60,27 +64,23 @@ public class Indexing {
     private int getTotalCount() {
         String sql = "SELECT COUNT(id) FROM page WHERE site_id = ?";
 
-        return ((BigInteger) session.createNativeQuery(sql)
-                .setParameter(1, site.getId())
-                .getSingleResult())
-                .intValue();
+        return ((BigInteger) connection.getSession().createNativeQuery(sql).setParameter(1, site.getId()).getSingleResult()).intValue();
     }
 
     private void index() {
         for (int i = 0; i < pageCount; i++) {
+            System.out.println((i + 1) + " из " + pageCount + " на сайте " + site.getId());
+            System.out.println("Время обработки страницы: " + ((double) System.currentTimeMillis() - start) / 1000 + "s");
+            start = System.currentTimeMillis();
             int offset = i * LIMIT;
-            setPages(offset);
+            pages = getPages(offset);
 
-            lemmasCounter.execute();
-            indexesCounter.execute();
+            lemmasCounter.execute(pages);
+//            indexesCounter.execute(pages);
         }
     }
 
-    private void setPages(int offset) {
-        pages = session.createNativeQuery(pageCountSql, Page.class)
-                .setParameter(1, site.getId())
-                .setParameter(2, LIMIT)
-                .setParameter(3, offset)
-                .list();
+    private List<Page> getPages(int offset) {
+        return connection.getSession().createNativeQuery(pageCountSql, Page.class).setParameter(1, site.getId()).setParameter(2, LIMIT).setParameter(3, offset).list();
     }
 }

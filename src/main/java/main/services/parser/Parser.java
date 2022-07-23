@@ -56,13 +56,13 @@ public class Parser implements Runnable {
     @Override
     public void run() {
 //        new ForkJoinPool().invoke(new RecursiveParser(this, site.getUrl().concat("/")));
-//
+
 //        if (pageMap.size() <= 1) {
 //            setSiteStatus(SiteStatus.FAILED);
 //            return;
 //        }
-//
-//        savePages();
+
+        savePages();
         new Indexing(siteParser.getFields()).execute(site);
     }
 

@@ -1,6 +1,7 @@
 package main.services.parser;
 
 import lombok.Getter;
+import main.controllers.ApiController;
 import main.entities.Field;
 import main.entities.Site;
 import main.enums.SiteStatus;
@@ -39,7 +40,9 @@ public class SiteParser {
     private final List<String> existsDomains = new ArrayList<>();
     private final List<Long> sitesForDelete = new ArrayList<>();
     private final List<Site> sitesForAdding = new ArrayList<>();
-    private final List<Thread> threads = new ArrayList<>();
+
+    @Getter
+    private static final List<Thread> threads = new ArrayList<>();
 
     public SiteParser(
             ApplicationProps applicationProps,
@@ -57,10 +60,13 @@ public class SiteParser {
     }
 
     public void run() {
+        threads.clear();
         Iterable<Site> sites = getSites(applicationProps.getSites());
 
         sites.forEach(this::makeThread);
         threads.forEach(Thread::start);
+        threads.forEach(this::completeIndexing);
+        ApiController.IS_PARSE = false;
     }
 
     private @NotNull Iterable<Site> getSites(@NotNull List<Map<String, String>> siteList) {
@@ -99,5 +105,13 @@ public class SiteParser {
     private void makeThread(@NotNull Site site) {
         Parser parser = new Parser(site, new ConcurrentHashMap<>(), this);
         threads.add(new Thread(parser));
+    }
+
+    private void completeIndexing(@NotNull Thread thread) {
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

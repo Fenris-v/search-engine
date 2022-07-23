@@ -6,6 +6,7 @@ import main.services.parser.SiteParser;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,8 +26,17 @@ public class ApiController extends AbstractApiController {
 
     @GetMapping("/api/startIndexing")
     public Map<String, Object> index() {
+        if (IS_PARSE) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("result", false);
+            response.put("error", "Индексация уже запущена");
+
+            return response;
+        }
+
         IS_PARSE = true;
-        siteParser.run();
+
+        new Thread(siteParser::run).start();
         return getBoolResponse();
     }
 

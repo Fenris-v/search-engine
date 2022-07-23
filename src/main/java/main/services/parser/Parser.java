@@ -6,13 +6,13 @@ import main.entities.Site;
 import main.enums.SiteStatus;
 import main.repositories.LemmaRepository;
 import main.repositories.PageRepository;
-import main.services.indexing.Indexing;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.concurrent.ForkJoinPool;
 
 public class Parser implements Runnable {
     @Getter
@@ -40,7 +40,7 @@ public class Parser implements Runnable {
         this.pageMap = pageMap;
         this.site = site;
         this.siteParser = siteParser;
-        referrer = siteParser.getApplicationProps().getUserAgent();
+        referrer = siteParser.getApplicationProps().getReferrer();
         userAgent = siteParser.getApplicationProps().getUserAgent();
         pageRepository = siteParser.getPageRepository();
         lemmaRepository = siteParser.getLemmaRepository();
@@ -55,15 +55,15 @@ public class Parser implements Runnable {
 
     @Override
     public void run() {
-//        new ForkJoinPool().invoke(new RecursiveParser(this, site.getUrl().concat("/")));
+        new ForkJoinPool().invoke(new RecursiveParser(this, site.getUrl().concat("/")));
 
-//        if (pageMap.size() <= 1) {
-//            setSiteStatus(SiteStatus.FAILED);
-//            return;
-//        }
+        if (pageMap.size() <= 1) {
+            setSiteStatus(SiteStatus.FAILED);
+            return;
+        }
 
         savePages();
-        new Indexing(siteParser.getFields()).execute(site);
+//        new Indexing(siteParser.getFields()).execute(site);
     }
 
     private void savePages() {

@@ -2,6 +2,7 @@ package main.services.indexing;
 
 import lombok.Getter;
 import lombok.Setter;
+import main.controllers.ApiController;
 import main.db.Connection;
 import main.entities.Field;
 import main.entities.Page;
@@ -48,7 +49,7 @@ public class Indexing {
         setSite(site);
 
         lemmasCounter = new LemmasCounter(this);
-//        indexesCounter = new IndexesCounter(this);
+        indexesCounter = new IndexesCounter(this);
 
         transaction = connection.getSession().beginTransaction();
         countPages();
@@ -69,18 +70,27 @@ public class Indexing {
 
     private void index() {
         for (int i = 0; i < pageCount; i++) {
-            System.out.println((i + 1) + " из " + pageCount + " на сайте " + site.getId());
-            System.out.println("Время обработки страницы: " + ((double) System.currentTimeMillis() - start) / 1000 + "s");
-            start = System.currentTimeMillis();
+            if (!ApiController.IS_PARSE) {
+                return;
+            }
+
             int offset = i * LIMIT;
             pages = getPages(offset);
 
             lemmasCounter.execute(pages);
-//            indexesCounter.execute(pages);
+            indexesCounter.execute(pages);
+
+            printDuringOfPageIndexing(i);
         }
     }
 
     private List<Page> getPages(int offset) {
         return connection.getSession().createNativeQuery(pageCountSql, Page.class).setParameter(1, site.getId()).setParameter(2, LIMIT).setParameter(3, offset).list();
+    }
+
+    private void printDuringOfPageIndexing(int i) {
+        System.out.println((i + 1) + " из " + pageCount + " на сайте " + site.getId());
+        System.out.println("Время обработки страницы: " + ((double) System.currentTimeMillis() - start) / 1000 + "s");
+        start = System.currentTimeMillis();
     }
 }

@@ -1,21 +1,28 @@
 package main.services.searching;
 
+import main.db.Connection;
+import main.entities.Lemma;
 import main.models.Result;
+import org.hibernate.Transaction;
+import org.springframework.stereotype.Service;
 
 import java.util.Set;
 
+@Service
 public class Search {
     public final static int SNIPPET_LENGTH = 250;
 
-    private final String searchRequest;
-//    private final java.sql.Connection connection;
+    private final Connection connection;
 
-    public Search(String searchRequest) {
-        this.searchRequest = searchRequest;
-//        connection = Connection.getInstance().getConnection();
+    public Search() {
+        this.connection = new Connection();
     }
 
-    public Set<Result> execute() {
+    public Set<Result> execute(String query) {
+        Transaction transaction = connection.getSession().beginTransaction();
+        Set<Lemma> lemmas = new Lemmas(query, connection.getSession()).getLemmas();
+
+        return null;
 //        try (Statement statement = connection.createStatement()) {
 //            Set<Lemma> lemmas = new Lemmas(searchRequest, statement).getLemmas();
 //            if (lemmas.isEmpty()) {
@@ -28,6 +35,7 @@ public class Search {
 //        } finally {
 //            Connection.closeConnection(connection);
 //        }
-        return null;
+//
+//        return null;
     }
 }

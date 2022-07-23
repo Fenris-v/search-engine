@@ -12,4 +12,6 @@ public interface SiteRepository extends CrudRepository<Site, Long> {
             "LEFT JOIN Page p ON p.site = s " +
             "LEFT JOIN Lemma l ON l.site = s GROUP BY s")
     Iterable<Statistic> getStatistic();
+
+    Site findByUrl(String url);
 }

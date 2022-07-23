@@ -2,11 +2,11 @@ package main.services.searching;
 
 import main.entities.Lemma;
 import main.services.morphology.Morphology;
+import org.hibernate.Session;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -15,20 +15,20 @@ class Lemmas {
     private final Morphology morphology = new Morphology();
 
     private final String searchRequest;
-    private final Statement statement;
+    private final Session session;
     private final int junkLevel;
 
-    public Lemmas(String searchRequest, @NotNull Statement statement) throws SQLException {
+    public Lemmas(String searchRequest, Session session) {
         this.searchRequest = searchRequest;
-        this.statement = statement;
-        junkLevel = getJunkLevel(statement);
+        this.session = session;
+        junkLevel = getJunkLevel();
     }
 
     @NotNull Set<Lemma> getLemmas() throws SQLException {
         Set<String> wordsInRequest = morphology.countWords(searchRequest).keySet();
         String sql = getLemmasSql(wordsInRequest);
 
-        ResultSet result = statement.executeQuery(sql);
+        ResultSet result = session.executeQuery(sql);
         Set<Lemma> lemmas = new TreeSet<>();
         while (result.next()) {
             lemmas.add(makeLemma(result));
@@ -37,11 +37,9 @@ class Lemmas {
         return lemmas;
     }
 
-    private int getJunkLevel(@NotNull Statement statement) throws SQLException {
-        String sql = "SELECT COUNT(id) count FROM pages";
-        ResultSet result = statement.executeQuery(sql);
-        result.next();
-        int pagesCount = result.getInt("count");
+    private int getJunkLevel() {
+        String sql = "SELECT COUNT(id) count FROM page";
+        int pagesCount = (int) session.createNativeQuery(sql).getSingleResult();
         return (int) (pagesCount * JUNK_PERCENT);
     }
 

@@ -19,5 +19,6 @@
         <mapping class="main.entities.Page"/>
         <mapping class="main.entities.Site"/>
         <mapping class="main.entities.Lemma"/>
+        <mapping class="main.entities.Word"/>
     </session-factory>
 </hibernate-configuration>

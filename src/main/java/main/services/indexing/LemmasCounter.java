@@ -1,10 +1,10 @@
 package main.services.indexing;
 
+import main.controllers.ApiController;
 import main.entities.Field;
 import main.entities.Page;
 import main.services.HTMLCleaner;
 import main.services.morphology.Morphology;
-import org.hibernate.Session;
 import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -14,29 +14,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-class LemmasCounter {
-    private final Indexing indexing;
-    private final long siteId;
+class LemmasCounter extends AbstractCounter {
     private Document document;
     private final Morphology morphology = new Morphology();
     private final Map<String, Integer> words = new HashMap<>();
-    private final StringBuilder stringBuilder = new StringBuilder();
 
     public LemmasCounter(@NotNull Indexing indexing) {
-        this.indexing = indexing;
-        this.siteId = indexing.getSite().getId();
+        super(indexing);
     }
 
     void execute(@NotNull List<Page> pages) {
         pages.forEach(this::saveLemmasForPage);
     }
 
-    private Session getSession() {
-        return indexing.getConnection().getSession();
-    }
-
     private void saveLemmasForPage(@NotNull Page page) {
-        if (page.getCode() != 200) {
+        if (!ApiController.IS_PARSE || page.getCode() != 200) {
             return;
         }
 
@@ -48,6 +40,10 @@ class LemmasCounter {
     }
 
     private void countWords(@NotNull Field field) {
+        if (!ApiController.IS_PARSE) {
+            return;
+        }
+
         Element element = document.selectFirst(field.getSelector());
 
         if (element == null) {
@@ -59,6 +55,10 @@ class LemmasCounter {
     }
 
     private void addWord(String word, int count) {
+        if (!ApiController.IS_PARSE) {
+            return;
+        }
+
         words.put(word, words.getOrDefault(word, 0) + count);
 
         if (words.size() >= 1_000_000) {
@@ -96,14 +96,5 @@ class LemmasCounter {
                 .append(",")
                 .append(siteId)
                 .append("),");
-    }
-
-    private void executeQuery() {
-        getSession().createNativeQuery(stringBuilder.toString()).executeUpdate();
-
-        getSession().flush();
-        getSession().clear();
-        indexing.getTransaction().commit();
-        indexing.setTransaction(getSession().beginTransaction());
     }
 }

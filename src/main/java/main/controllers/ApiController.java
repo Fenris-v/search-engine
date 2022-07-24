@@ -1,7 +1,6 @@
 package main.controllers;
 
 import main.exceptions.DomainNotInListException;
-import main.models.Result;
 import main.services.StatisticService;
 import main.services.parser.PageParser;
 import main.services.parser.SiteParser;
@@ -12,9 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 @RestController
 public class ApiController extends AbstractApiController {
@@ -65,19 +62,20 @@ public class ApiController extends AbstractApiController {
         return statisticService.get();
     }
 
-    @GetMapping("/api/results")
+    @GetMapping("/api/search")
     public Map<String, Object> search(@NotNull String query) {
-        if (query.isEmpty()) {
-            return getResponse(false, "Задан пустой поисковый запрос");
-        }
-
-        Set<Result> results = search.execute();
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("result", true);
-        response.put("count", results.size());
-        response.put("data", results);
-
-        return response;
+//        if (query.isEmpty()) {
+//            return getResponse(false, "Задан пустой поисковый запрос");
+//        }
+//
+//        Set<Result> results = search.execute(query);
+//
+//        Map<String, Object> response = new HashMap<>();
+//        response.put("result", true);
+//        response.put("count", results.size());
+//        response.put("data", results);
+//
+//        return response;
+        return null;
     }
 }

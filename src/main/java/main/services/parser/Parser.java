@@ -6,6 +6,7 @@ import main.entities.Site;
 import main.enums.SiteStatus;
 import main.repositories.LemmaRepository;
 import main.repositories.PageRepository;
+import main.services.indexing.Indexing;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,7 +64,7 @@ public class Parser implements Runnable {
         }
 
         savePages();
-//        new Indexing(siteParser.getFields()).execute(site);
+        new Indexing(siteParser.getFields()).execute(site);
     }
 
     private void savePages() {

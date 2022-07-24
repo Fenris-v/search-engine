@@ -8,7 +8,6 @@ import org.jetbrains.annotations.NotNull;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Set;
-import java.util.TreeSet;
 
 class Lemmas {
     private final static double JUNK_PERCENT = 0.9;
@@ -28,13 +27,14 @@ class Lemmas {
         Set<String> wordsInRequest = morphology.countWords(searchRequest).keySet();
         String sql = getLemmasSql(wordsInRequest);
 
-        ResultSet result = session.executeQuery(sql);
-        Set<Lemma> lemmas = new TreeSet<>();
-        while (result.next()) {
-            lemmas.add(makeLemma(result));
-        }
+//        ResultSet result = session.executeQuery(sql);
+//        Set<Lemma> lemmas = new TreeSet<>();
+//        while (result.next()) {
+//            lemmas.add(makeLemma(result));
+//        }
 
-        return lemmas;
+//        return lemmas;
+        return null;
     }
 
     private int getJunkLevel() {

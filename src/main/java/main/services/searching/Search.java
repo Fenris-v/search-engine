@@ -1,7 +1,6 @@
 package main.services.searching;
 
 import main.db.Connection;
-import main.entities.Lemma;
 import main.models.Result;
 import org.hibernate.Transaction;
 import org.springframework.stereotype.Service;
@@ -20,7 +19,7 @@ public class Search {
 
     public Set<Result> execute(String query) {
         Transaction transaction = connection.getSession().beginTransaction();
-        Set<Lemma> lemmas = new Lemmas(query, connection.getSession()).getLemmas();
+//        Set<Lemma> lemmas = new Lemmas(query, connection.getSession()).getLemmas();
 
         return null;
 //        try (Statement statement = connection.createStatement()) {

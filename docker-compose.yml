@@ -1,0 +1,22 @@
+version: '3'
+services:
+  pgsql:
+    image: 'postgres:14'
+    volumes:
+      - 'pgsql:/var/lib/postgresql/data'
+    ports:
+      - '5432:5432'
+    environment:
+      PGPASSWORD: 'password'
+      POSTGRES_DB: 'search_engine'
+      POSTGRES_USER: 'engine'
+      POSTGRES_PASSWORD: 'password'
+    networks:
+      - server
+
+networks:
+  server:
+    driver: bridge
+volumes:
+  pgsql:
+    driver: local

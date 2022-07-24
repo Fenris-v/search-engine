@@ -1,3 +1,5 @@
 /.idea/
 /target/
 /logs/
+/src/main/resources/static/plg/
+/src/main/resources/static/fonts/Montserrat/

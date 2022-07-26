@@ -11,6 +11,7 @@ import main.repositories.FieldRepository;
 import main.repositories.PageRepository;
 import main.repositories.SiteRepository;
 import main.services.HTMLCleaner;
+import main.services.SiteList;
 import main.services.morphology.Morphology;
 import org.hibernate.Transaction;
 import org.jetbrains.annotations.NotNull;
@@ -21,7 +22,6 @@ import org.jsoup.nodes.Element;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,37 +54,15 @@ public class PageParser {
 
     public void parse(String url) throws DomainNotInListException, IOException {
         url = url.trim();
-        if (!hasInList(url)) {
-            throw new DomainNotInListException();
-        }
+
+        String domain = SiteList.getDomain(url, applicationProps);
+        path = url.replace(domain, "");
+        site = siteRepository.findByUrl(domain);
 
         Connection.Response response = getResponse(url);
         Page page = savePage(response);
 
         index(page);
-    }
-
-    private boolean hasInList(String url) {
-        List<String> domainList = getDomainList();
-        for (String domain : domainList) {
-            if (url.indexOf(domain) != 0) {
-                continue;
-            }
-
-            path = url.replace(domain, "");
-            site = siteRepository.findByUrl(domain);
-            return true;
-        }
-
-        return false;
-    }
-
-    private @NotNull List<String> getDomainList() {
-        List<Map<String, String>> sites = applicationProps.getSites();
-        List<String> domainList = new ArrayList<>();
-
-        sites.forEach(site -> domainList.add(site.get("url")));
-        return domainList;
     }
 
     private @NotNull Connection.Response getResponse(String path) throws IOException {

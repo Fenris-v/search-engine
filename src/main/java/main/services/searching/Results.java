@@ -3,106 +3,95 @@ package main.services.searching;
 import main.entities.Index;
 import main.entities.Lemma;
 import main.entities.Page;
+import main.entities.Site;
 import main.models.Result;
 import main.services.HTMLCleaner;
 import main.services.morphology.Morphology;
+import org.hibernate.Session;
 import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
+import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.*;
 
 class Results {
-    private final Statement statement;
-    private final Set<Lemma> lemmas;
+    private final List<Lemma> lemmas;
     private final String mostRareWord;
     private final Morphology morphology;
+    private final Session session;
+    private final Site site;
+    private final Search search;
 
     private float maxAbsRank = 0;
     private float pageAbsRank = 0;
 
-    private final Map<Integer, List<Index>> indexMap = new HashMap<>();
+    private final Map<Long, List<Index>> indexMap = new HashMap<>();
     private final Map<Integer, Page> pages = new HashMap<>();
     private final TreeSet<Result> results = new TreeSet<>();
     private final Map<Long, Float> pageLemmasRank = new HashMap<>();
 
-    public Results(Statement statement, @NotNull Set<Lemma> lemmas) {
-        this.statement = statement;
+    Results(@NotNull List<Lemma> lemmas, Site site, @NotNull Search search) {
+        this.search = search;
         this.lemmas = lemmas;
+        this.session = search.getConnection().getSession();
+        this.site = site;
         mostRareWord = lemmas.isEmpty() ? "" : lemmas.iterator().next().getLemma();
         morphology = new Morphology();
     }
 
-    @NotNull TreeSet<Result> getResults() throws SQLException {
+    @NotNull TreeSet<Result> getResults() {
         if (lemmas.isEmpty()) {
             return new TreeSet<>();
         }
 
-        List<Integer> indexes = getIndexes(lemmas);
+        List<BigInteger> indexIds = getIndexesIds();
+        List<Index> indexes = getIndexes(indexIds);
 
-        String sql = getResultsSql(lemmas, indexes);
-        ResultSet resultSet = statement.executeQuery(sql);
-
-        while (resultSet.next()) {
-            int pageId = resultSet.getInt("page_id");
-            addPageToList(resultSet, pageId);
-            putIndexToMap(resultSet, pageId);
-        }
-
+        putIndexToMap(indexes);
+        System.out.println(indexMap);
         return prepareResults();
     }
 
-    private @NotNull List<Integer> getIndexes(@NotNull Set<Lemma> lemmas) {
-        List<Integer> indexes = new ArrayList<>();
-        for (Lemma lemma : lemmas) {
-            getIndexesByLemma(indexes, lemma);
+    private List<BigInteger> getIndexesIds() {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("SELECT page_id FROM index i LEFT JOIN page ON page_id = page.id WHERE lemma_id IN (");
+        lemmas.forEach(lemma -> {
+            stringBuilder.append(lemma.getId()).append(",");
+        });
 
-            if (indexes.isEmpty()) {
-                break;
-            }
+        stringBuilder.setLength(stringBuilder.length() - 1);
+        stringBuilder.append(")");
+
+        if (site != null) {
+            stringBuilder.append(" AND site_id = ").append(site.getId());
         }
 
-        return indexes;
+        stringBuilder.append(" GROUP BY i.page_id HAVING COUNT(lemma_id) = ").append(search.getWordsCount());
+
+        return (List<BigInteger>) session.createNativeQuery(stringBuilder.toString()).getResultList();
     }
 
-    private void getIndexesByLemma(List<Integer> indexes, Lemma lemma) {
-        try {
-            String sql = getIndexesSql(indexes, lemma);
-            ResultSet resultSet = statement.executeQuery(sql);
-            indexes.clear();
-
-            while (resultSet.next()) {
-                indexes.add(resultSet.getInt("page_id"));
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    private @NotNull List<Index> getIndexes(List<BigInteger> indexIds) {
+        String sql = getIndexesSql(indexIds);
+        return session.createNativeQuery(sql, Index.class).getResultList();
     }
 
-    private @NotNull String getIndexesSql(@NotNull List<Integer> indexes, @NotNull Lemma lemma) {
-        StringBuilder sql = new StringBuilder("SELECT * FROM indexes WHERE lemma_id = " + lemma.getId());
+    private @NotNull String getIndexesSql(@NotNull List<BigInteger> indexIds) {
+        StringBuilder sql = new StringBuilder("SELECT * FROM index i LEFT JOIN page p ON p.id = page_id WHERE i.id IN (");
+        indexIds.forEach(id -> sql.append(id).append(","));
 
-        if (!indexes.isEmpty()) {
-            sql.append(" AND (");
-            indexes.forEach(index -> {
-                if (!Objects.equals(indexes.get(0), index)) {
-                    sql.append(" OR ");
-                }
-
-                sql.append(" page_id = ").append(index);
-            });
-            sql.append(")");
-        }
+        sql.setLength(sql.length() - 1);
+        sql.append(") ORDER BY rank DESC");
 
         return sql.toString();
     }
 
-    private @NotNull String getResultsSql(@NotNull Set<Lemma> lemmas, @NotNull List<Integer> indexes) {
-        StringBuilder sql = new StringBuilder("SELECT * FROM indexes LEFT JOIN pages ON page_id = pages.id WHERE (");
+    private @NotNull String getResultsSql(@NotNull List<Lemma> lemmas, @NotNull List<Index> indexes) {
+        StringBuilder sql = new StringBuilder("SELECT * FROM index LEFT JOIN pages ON page_id = pages.id WHERE (");
         indexes.forEach(index -> {
             if (!Objects.equals(indexes.get(0), index)) {
                 sql.append(" OR ");
@@ -124,33 +113,16 @@ class Results {
         return sql.append(")").toString();
     }
 
-    private void addPageToList(ResultSet resultSet, int pageId) throws SQLException {
-        if (pages.containsKey(pageId)) {
-            return;
-        }
+    private void putIndexToMap(List<Index> indexes) {
+        indexes.forEach(index -> {
+            long pageId = index.getPage().getId();
 
-        pages.put(pageId, makePage(resultSet, pageId));
-    }
+            if (!indexMap.containsKey(pageId)) {
+                indexMap.put(pageId, new ArrayList<>());
+            }
 
-    private @NotNull Page makePage(@NotNull ResultSet resultSet, int pageId) throws SQLException {
-        // todo
-//        return new Page(
-//                pageId,
-//                resultSet.getString("path"),
-//                resultSet.getInt("code"),
-//                resultSet.getString("content"),
-//                1
-//        );
-        return null;
-    }
-
-    private void putIndexToMap(@NotNull ResultSet resultSet, int pageId) throws SQLException {
-        if (!indexMap.containsKey(pageId)) {
-            indexMap.put(pageId, new ArrayList<>(List.of(makeIndex(resultSet))));
-            return;
-        }
-
-        indexMap.get(pageId).add(makeIndex(resultSet));
+            indexMap.get(pageId).add(index);
+        });
     }
 
     private @NotNull Index makeIndex(@NotNull ResultSet resultSet) throws SQLException {
@@ -165,10 +137,11 @@ class Results {
     }
 
     private @NotNull TreeSet<Result> prepareResults() {
-        indexMap.forEach(this::addResult);
-
-        results.forEach(result -> result.setRelevance(result.getAbsRank() / maxAbsRank));
-        return results;
+        return null;
+//        indexMap.forEach(this::addResult);
+//
+//        results.forEach(result -> result.setRelevance(result.getAbsRank() / maxAbsRank));
+//        return results;
     }
 
     private void addResult(Integer pageId, @NotNull List<Index> indexes) {

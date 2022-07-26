@@ -20,5 +20,6 @@
         <mapping class="main.entities.Site"/>
         <mapping class="main.entities.Lemma"/>
         <mapping class="main.entities.Word"/>
+        <mapping class="main.entities.Index"/>
     </session-factory>
 </hibernate-configuration>

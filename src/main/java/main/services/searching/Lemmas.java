@@ -1,45 +1,48 @@
 package main.services.searching;
 
 import main.entities.Lemma;
+import main.entities.Site;
 import main.services.morphology.Morphology;
 import org.hibernate.Session;
 import org.jetbrains.annotations.NotNull;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.math.BigInteger;
+import java.util.List;
 import java.util.Set;
 
 class Lemmas {
     private final static double JUNK_PERCENT = 0.9;
     private final Morphology morphology = new Morphology();
 
-    private final String searchRequest;
+    private final String query;
     private final Session session;
     private final int junkLevel;
+    private final Site site;
+    private final Search search;
 
-    public Lemmas(String searchRequest, Session session) {
-        this.searchRequest = searchRequest;
-        this.session = session;
+    Lemmas(String query, Site site, @NotNull Search search) {
+        this.search = search;
+        this.query = query;
+        this.session = search.getConnection().getSession();
+        this.site = site;
         junkLevel = getJunkLevel();
     }
 
-    @NotNull Set<Lemma> getLemmas() throws SQLException {
-        Set<String> wordsInRequest = morphology.countWords(searchRequest).keySet();
+    List<Lemma> getLemmas() {
+        Set<String> wordsInRequest = morphology.countWords(query).keySet();
+        search.setWordsCount(wordsInRequest.size());
         String sql = getLemmasSql(wordsInRequest);
 
-//        ResultSet result = session.executeQuery(sql);
-//        Set<Lemma> lemmas = new TreeSet<>();
-//        while (result.next()) {
-//            lemmas.add(makeLemma(result));
-//        }
-
-//        return lemmas;
-        return null;
+        return session.createNativeQuery(sql, Lemma.class).getResultList();
     }
 
     private int getJunkLevel() {
         String sql = "SELECT COUNT(id) count FROM page";
-        int pagesCount = (int) session.createNativeQuery(sql).getSingleResult();
+        if (site != null) {
+            sql += " WHERE site_id = " + site.getId();
+        }
+
+        int pagesCount = ((BigInteger) session.createNativeQuery(sql).getSingleResult()).intValue();
         return (int) (pagesCount * JUNK_PERCENT);
     }
 
@@ -51,19 +54,13 @@ class Lemmas {
                 .append("' ")
         );
 
-        sql.append(") AND frequency < ").append(junkLevel);
-        sql.insert(0, "SELECT id, lemma, frequency FROM lemmas ");
-        return sql.toString();
-    }
+        sql.insert(0, "SELECT * FROM lemma ");
 
-    private @NotNull Lemma makeLemma(@NotNull ResultSet result) throws SQLException {
-        // todo
-        return null;
-//        return new Lemma(
-//                result.getInt("id"),
-//                result.getString("lemma"),
-//                result.getInt("frequency"),
-//                result.getInt("site_id")
-//        );
+        sql.append(") AND frequency < ").append(junkLevel);
+        if (site != null) {
+            sql.append(" AND site_id = ").append(site.getId());
+        }
+
+        return sql.toString();
     }
 }
